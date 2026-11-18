@@ -4,6 +4,7 @@ import Enseignement from './pages/Enseignement';
 import Etablissement from './pages/Etablissement';
 import Personnes from './pages/Personnes';
 import Referentiel from './pages/Referentiel';
+import Tarifs from './pages/Tarifs';
 import Utilisateurs from './pages/Utilisateurs';
 
 export const ROUTES_PARAMETRES = [
@@ -12,6 +13,7 @@ export const ROUTES_PARAMETRES = [
   { path: 'enseignement', element: <Enseignement /> },
   { path: 'personnes', element: <Personnes /> },
   { path: 'utilisateurs', element: <Utilisateurs /> },
+  { path: 'tarifs', element: <Tarifs /> },
   { path: 'etablissement', element: <Etablissement /> },
   { path: 'audit', element: <Audit /> },
 ];

@@ -4,6 +4,7 @@ from django.contrib import admin
 from django.urls import include, path, re_path
 
 from core.spa import fichier_frontend, spa_index
+from finance import urls as finance_urls
 from scolarite.views_documents import verifier_document
 from core.throttles import limiter_connexion_admin
 
@@ -14,8 +15,11 @@ urlpatterns = [
     path('admin/', admin.site.urls),
     path('api/core/', include('core.urls')),
     path('api/edt/', include('edt.urls')),
+    # Situation des frais de l'étudiant : servie par la Finance, dans l'espace étudiant.
+    path('api/scolarite/moi/frais/', include(finance_urls.urlpatterns_etudiant)),
     path('api/scolarite/', include('scolarite.urls')),
     path('api/rh/', include('rh.urls')),
+    path('api/finance/', include('finance.urls')),
     # Page publique ouverte par le QR code des documents officiels (hors SPA).
     path('verifier/<str:jeton>', verifier_document, name='verifier_document'),
 ] + static(settings.MEDIA_URL, document_root=settings.MEDIA_ROOT) + [

@@ -135,6 +135,9 @@ class InscriptionViewSet(mixins.ListModelMixin, mixins.RetrieveModelMixin, mixin
         inscription = serializer.save()
         inscription.notes.all().delete()
         Note.objects.bulk_create([Note(inscription=inscription, ec=ec) for ec in classe.ecs_au_programme()])
+        from scolarite.inscriptions import APRES_CHANGEMENT_CLASSE
+        for rappel in list(APRES_CHANGEMENT_CLASSE):
+            rappel(inscription)
         journaliser(self.request, 'scolarite', 'changement_classe', f'{inscription.etudiant.matricule} : '
                                                                      f'{ancienne} → {classe}')
 

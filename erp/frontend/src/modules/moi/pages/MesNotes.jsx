@@ -18,7 +18,7 @@ function Semestre({ s }) {
             </span>
             {note(r.moyenne)} / 20 · {r.credits_obtenus}/{r.credits_totaux} crédits{r.mention !== 'NÉANT' ? ` · ${r.mention}` : ''}
           </p>
-        ) : <p className="text-sm text-muted-foreground">En attente de délibération</p>}
+        ) : <p className="text-sm text-muted-foreground">{s.deliberee ? 'Délibéré — résultat masqué' : 'En attente de délibération'}</p>}
       </header>
       <table className="w-full text-sm">
         <thead className="text-xs text-muted-foreground"><tr>
@@ -57,6 +57,11 @@ export default function MesNotes() {
       {(notes.data?.inscriptions ?? []).map((i) => (
         <div key={i.inscription} className="space-y-3">
           <h2 className="text-lg font-semibold">{i.classe}</h2>
+          {i.resultats_masques && (
+            <p role="status" className="rounded-md bg-amber-50 px-3 py-2 text-sm text-amber-900 dark:bg-amber-900/20 dark:text-amber-100">
+              {i.message_resultats}
+            </p>
+          )}
           <div className="grid gap-3 xl:grid-cols-2">
             {i.semestres.map((s) => <Semestre key={s.semestre} s={s} />)}
           </div>

@@ -1,0 +1,27 @@
+<!DOCTYPE html>
+<html lang="fr"><head><meta charset="utf-8"><title>{{ titre }} — {{ operation.numero }}</title>
+<style>
+@page { size: a5 landscape; margin: 1cm; }
+body { font-family: Helvetica, sans-serif; font-size: 10pt; }
+.entete td { vertical-align: top; }
+h1 { font-size: 14pt; margin: 6px 0 2px 0; }
+table.infos { width: 100%; border-collapse: collapse; margin-top: 8px; }
+table.infos td { padding: 3px 4px; border-bottom: 0.5px solid #cccccc; }
+table.infos td.l { color: #555555; width: 38%; }
+.montant { font-size: 16pt; font-weight: bold; color: #0b7a3e; }
+.annule { color: #b42318; font-size: 18pt; font-weight: bold; border: 2px solid #b42318; padding: 4px; text-align: center; margin-top: 6px; }
+.pied { font-size: 7pt; color: #666666; margin-top: 10px; text-align: center; }
+</style></head>
+<body>
+<table class="entete"><tr>
+  <td style="width:70px;">{% if logo %}<img src="{{ logo }}" width="60">{% endif %}</td>
+  <td><b>UNIVERSITÉ CATHOLIQUE DU CONGO – BRAZZAVILLE</b><br>Service financier<br>
+    <h1>{{ titre }}</h1>N° {{ operation.numero }} — {{ operation.date|date:"d/m/Y" }}</td>
+</tr></table>
+{% if annule %}<div class="annule">ANNULÉ{% if motif_annulation %} — {{ motif_annulation }}{% endif %}</div>{% endif %}
+<table class="infos">
+  {% for libelle, valeur in lignes %}<tr><td class="l">{{ libelle }}</td><td>{{ valeur }}</td></tr>{% endfor %}
+  <tr><td class="l">Montant</td><td class="montant">{{ montant }} FCFA</td></tr>
+</table>
+<div class="pied">Reçu émis le {{ emis_le|date:"d/m/Y H:i" }}{% if par %} par {{ par }}{% endif %} — UCCB, {{ parametres.ville_signature }}, République du Congo</div>
+</body></html>
