@@ -7,6 +7,12 @@ from core.models import (
 )
 
 
+def personne(nom='Mabiala', prenom='Grâce', **kwargs):
+    from core.models import Personne
+    kwargs.setdefault('genre', 'F')
+    return Personne.objects.create(nom=nom, prenom=prenom, **kwargs)
+
+
 def annee(libelle='2026-2027', en_cours=False, **kwargs):
     debut = int(libelle[:4])
     obj, _ = AnneeAcademique.objects.get_or_create(

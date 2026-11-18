@@ -142,6 +142,9 @@ class Faculte(ModeleValide):
 class Departement(ModeleValide):
     libelle = models.CharField(max_length=100)
     faculte = models.ForeignKey(Faculte, on_delete=models.PROTECT, related_name='departements')
+    chef = models.ForeignKey(
+        'core.Enseignant', on_delete=models.SET_NULL, null=True, blank=True, related_name='departements_diriges'
+    )
 
     class Meta:
         verbose_name = 'Département'
@@ -178,6 +181,9 @@ class Filiere(ModeleValide):
     )
     nom = models.CharField(max_length=100)
     code = models.CharField(max_length=10, help_text='Ex : INFO')
+    responsable = models.ForeignKey(
+        'core.Enseignant', on_delete=models.SET_NULL, null=True, blank=True, related_name='filieres_responsable'
+    )
 
     class Meta:
         verbose_name = 'Filière'
