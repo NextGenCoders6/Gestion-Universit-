@@ -9,6 +9,7 @@ from rest_framework.decorators import action
 from rest_framework.response import Response
 
 from core import models
+from core.api.filtres import entier
 from core.permissions import LectureAuthentifieeEcritureParametres
 
 
@@ -20,8 +21,11 @@ class FiltresMixin:
     def get_queryset(self):
         qs = super().get_queryset()
         for param, champ in self.filtres.items():
-            valeur = self.request.query_params.get(param)
-            if valeur not in (None, ''):
+            if champ.endswith('_id'):
+                valeur = entier(self.request, param)
+            else:
+                valeur = self.request.query_params.get(param) or None
+            if valeur is not None:
                 qs = qs.filter(**{champ: valeur})
         return qs
 
@@ -185,8 +189,8 @@ class ClasseViewSet(ReferentielViewSet):
 
     def get_queryset(self):
         qs = super().get_queryset()
-        faculte = self.request.query_params.get('faculte')
-        if faculte:
+        faculte = entier(self.request, 'faculte')
+        if faculte is not None:
             from django.db.models import Q
             qs = qs.filter(Q(portail__faculte_id=faculte) | Q(filiere__departement__faculte_id=faculte))
         return qs

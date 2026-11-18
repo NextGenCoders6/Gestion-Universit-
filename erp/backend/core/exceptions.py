@@ -3,7 +3,7 @@
 - ValidationError Django (full_clean dans save()) → 400 par champ, jamais 500.
 - Suppression d'un élément encore utilisé (ProtectedError) → 400 expliqué.
 """
-from django.core.exceptions import ValidationError as DjangoValidationError
+from django.core.exceptions import NON_FIELD_ERRORS, ValidationError as DjangoValidationError
 from django.db.models import ProtectedError, RestrictedError
 from rest_framework import status
 from rest_framework.exceptions import ValidationError as DRFValidationError
@@ -19,13 +19,18 @@ def exception_handler(exc, context):
             {
                 'detail': (
                     'Suppression impossible : cet élément est encore utilisé par '
-                    + ', '.join(types)
+                    + ', '.join(t.lower() for t in types)
                     + ". Supprimez ou déplacez d'abord ces éléments."
                 ),
             },
             status=status.HTTP_400_BAD_REQUEST,
         )
     if isinstance(exc, DjangoValidationError):
-        detail = exc.message_dict if hasattr(exc, 'error_dict') else {'non_field_errors': exc.messages}
+        if hasattr(exc, 'error_dict'):
+            detail = dict(exc.message_dict)
+            if NON_FIELD_ERRORS in detail:
+                detail['non_field_errors'] = detail.pop(NON_FIELD_ERRORS)
+        else:
+            detail = {'non_field_errors': exc.messages}
         exc = DRFValidationError(detail)
     return drf_exception_handler(exc, context)

@@ -5,7 +5,7 @@ ces fiches au lieu de garder sa propre copie.
 """
 from django.conf import settings
 from django.core.exceptions import ValidationError
-from django.db import models
+from django.db import IntegrityError, models, transaction
 
 from core.validateurs import nom_validator, valider_date_naissance
 
@@ -62,12 +62,22 @@ class Personne(ModeleValide):
         super().save(*args, **kwargs)
 
 
+TENTATIVES_MATRICULE = 5
+
+
+def _suffixe_max(matricules):
+    maxi = 0
+    for m in matricules:
+        fin = m[-5:]
+        if fin.isdigit():
+            maxi = max(maxi, int(fin))
+    return maxi
+
+
 def _prochain_numero(modele, prefixe):
-    """Premier numéro libre pour un matricule « {prefixe}-{n:05d} »."""
-    numero = modele.objects.count() + 1
-    while modele.objects.filter(matricule=f'{prefixe}-{numero:05d}').exists():
-        numero += 1
-    return f'{prefixe}-{numero:05d}'
+    """Numéro suivant pour « {prefixe}-{n:05d} » ; un numéro libéré n'est jamais repris."""
+    existants = modele.objects.filter(matricule__startswith=f'{prefixe}-').values_list('matricule', flat=True)
+    return f'{prefixe}-{_suffixe_max(existants) + 1:05d}'
 
 
 def _lettres(texte, longueur):
@@ -75,15 +85,40 @@ def _lettres(texte, longueur):
 
 
 def generer_matricule_etudiant(personne, annee):
-    """UCCB{AA}{NOM3}{PR2}{n:05d}, algorithme de l'ancienne scolarité."""
+    """UCCB{AA}{NOM3}{PR2}{n:05d} ; n suit une séquence unique pour tous les étudiants."""
     base = f'UCCB{annee.libelle[2:4]}{_lettres(personne.nom, 3)}{_lettres(personne.prenom, 2)}'
-    numero = Etudiant.objects.count() + 1
-    while Etudiant.objects.filter(matricule=f'{base}{numero:05d}').exists():
-        numero += 1
+    numero = _suffixe_max(Etudiant.objects.values_list('matricule', flat=True)) + 1
     return f'{base}{numero:05d}'
 
 
-class Etudiant(ModeleValide):
+class MatriculeAutoMixin:
+    """Attribue le matricule à la création et réessaie si un autre enregistrement
+    simultané a pris le même numéro (contrôle d'unicité ou contrainte en base)."""
+
+    def generer_matricule(self):
+        raise NotImplementedError
+
+    def save(self, *args, **kwargs):
+        if self.matricule:
+            return super().save(*args, **kwargs)
+        for tentative in range(TENTATIVES_MATRICULE):
+            self.matricule = self.generer_matricule()
+            try:
+                with transaction.atomic():
+                    return super().save(*args, **kwargs)
+            except ValidationError as exc:
+                if 'matricule' not in getattr(exc, 'error_dict', {}) or tentative == TENTATIVES_MATRICULE - 1:
+                    self.matricule = ''
+                    raise
+            except IntegrityError:
+                if tentative == TENTATIVES_MATRICULE - 1:
+                    self.matricule = ''
+                    raise
+            self.matricule = ''
+        return None
+
+
+class Etudiant(MatriculeAutoMixin, ModeleValide):
     STATUT_CHOICES = [
         ('actif', 'Actif — étudiant en cours'),
         ('diplome', 'Diplômé — a terminé son cycle'),
@@ -102,13 +137,11 @@ class Etudiant(ModeleValide):
     def __str__(self):
         return f'{self.matricule} — {self.personne}'
 
-    def save(self, *args, **kwargs):
-        if not self.matricule:
-            self.matricule = generer_matricule_etudiant(self.personne, self.annee_entree)
-        super().save(*args, **kwargs)
+    def generer_matricule(self):
+        return generer_matricule_etudiant(self.personne, self.annee_entree)
 
 
-class Enseignant(ModeleValide):
+class Enseignant(MatriculeAutoMixin, ModeleValide):
     GRADE_CHOICES = [('', '—'), ('Ingénieur', 'Ingénieur'), ('Docteur', 'Docteur'), ('Professeur', 'Professeur')]
 
     personne = models.OneToOneField(Personne, on_delete=models.CASCADE, primary_key=True, related_name='enseignant')
@@ -122,13 +155,11 @@ class Enseignant(ModeleValide):
     def __str__(self):
         return f'{self.matricule} — {self.personne}'
 
-    def save(self, *args, **kwargs):
-        if not self.matricule:
-            self.matricule = _prochain_numero(Enseignant, 'UCCB-ENS')
-        super().save(*args, **kwargs)
+    def generer_matricule(self):
+        return _prochain_numero(Enseignant, 'UCCB-ENS')
 
 
-class Employe(ModeleValide):
+class Employe(MatriculeAutoMixin, ModeleValide):
     FONCTION_CHOICES = [
         ('menage', 'Agent de ménage'),
         ('gardien', 'Gardien / Agent de sécurité'),
@@ -162,7 +193,5 @@ class Employe(ModeleValide):
         if self.fonction == 'autre' and not (self.fonction_autre or '').strip():
             raise ValidationError({'fonction_autre': 'Précisez la fonction.'})
 
-    def save(self, *args, **kwargs):
-        if not self.matricule:
-            self.matricule = _prochain_numero(Employe, 'UCCB-PERS')
-        super().save(*args, **kwargs)
+    def generer_matricule(self):
+        return _prochain_numero(Employe, 'UCCB-PERS')

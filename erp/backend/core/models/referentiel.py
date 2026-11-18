@@ -260,14 +260,10 @@ class Classe(ModeleValide):
     class Meta:
         ordering = ['annee', 'parcours', 'libelle']
         constraints = [
-            models.UniqueConstraint(
-                fields=['annee', 'parcours', 'portail'], condition=models.Q(portail__isnull=False),
-                name='classe_unique_portail',
-            ),
-            models.UniqueConstraint(
-                fields=['annee', 'parcours', 'filiere'], condition=models.Q(filiere__isnull=False),
-                name='classe_unique_filiere',
-            ),
+            # Sans condition : MySQL ignore les contraintes conditionnelles. Les NULL
+            # étant distincts dans un index unique, l'effet est le même partout.
+            models.UniqueConstraint(fields=['annee', 'parcours', 'portail'], name='classe_unique_portail'),
+            models.UniqueConstraint(fields=['annee', 'parcours', 'filiere'], name='classe_unique_filiere'),
         ]
 
     def __str__(self):
@@ -287,7 +283,8 @@ class Classe(ModeleValide):
         if self.parcours.type_parcours == 'Doctorat':
             raise ValidationError({'parcours': "Le Doctorat n'a pas de classes dans l'ERP."})
         if bool(self.portail_id) == bool(self.filiere_id):
-            raise ValidationError('Une classe est rattachée soit à un portail (L1), soit à une filière, pas aux deux.')
+            message = 'Une classe est rattachée soit à un portail (L1), soit à une filière : choisissez l’un des deux.'
+            raise ValidationError({'portail': message, 'filiere': message})
         if self.parcours.code == 'L1' and not self.portail_id:
             raise ValidationError({'filiere': 'Une classe de L1 est rattachée à un portail, pas à une filière.'})
         if self.parcours.code != 'L1' and not self.filiere_id:
@@ -298,6 +295,11 @@ class Classe(ModeleValide):
         ).exclude(pk=self.pk)
         if self.annee_id and doublons.exists():
             raise ValidationError('Cette classe existe déjà pour cette année.')
+
+    def validate_constraints(self, exclude=None):
+        # L'unicité est contrôlée dans clean() avec un message clair ; la base
+        # garde ses contraintes en dernier rempart.
+        pass
 
     def save(self, *args, **kwargs):
         if self.parcours_id and self.annee_id and (self.portail_id or self.filiere_id):
@@ -337,7 +339,8 @@ class UniteEnseignement(ModeleValide):
 
     def clean(self):
         if bool(self.portail_id) == bool(self.filiere_id):
-            raise ValidationError("Une UE est rattachée soit à un portail, soit à une filière, pas aux deux.")
+            message = 'Une UE est rattachée soit à un portail, soit à une filière : choisissez l’un des deux.'
+            raise ValidationError({'portail': message, 'filiere': message})
         if not self.semestre:
             return
         if self.numero_semestre <= 2 and not self.portail_id:

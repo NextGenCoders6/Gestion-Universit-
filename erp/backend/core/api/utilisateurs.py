@@ -7,6 +7,7 @@ from rest_framework.decorators import action
 from rest_framework.response import Response
 from rest_framework.views import APIView
 
+from core.api.filtres import entier
 from core.audit import journaliser
 from core.droits import MODULES, definir_droits, tous_les_groupes
 from core.models import Faculte, JournalAudit, Personne
@@ -107,6 +108,10 @@ class UtilisateurViewSet(mixins.ListModelMixin, mixins.RetrieveModelMixin, mixin
 
     def get_queryset(self):
         qs = User.objects.select_related('personne', 'rattachement_faculte').prefetch_related('groups').order_by('username')
+        # Seul un superuser voit et modifie les superusers : sinon un responsable
+        # Paramètres pourrait prendre le compte d'administration technique.
+        if not self.request.user.is_superuser:
+            qs = qs.exclude(is_superuser=True)
         q = self.request.query_params.get('q', '').strip()
         return qs.filter(username__icontains=q) if q else qs
 
@@ -159,7 +164,7 @@ class AuditViewSet(viewsets.ReadOnlyModelViewSet):
         module = self.request.query_params.get('module')
         if module:
             qs = qs.filter(module=module)
-        utilisateur = self.request.query_params.get('utilisateur')
-        if utilisateur:
+        utilisateur = entier(self.request, 'utilisateur')
+        if utilisateur is not None:
             qs = qs.filter(utilisateur_id=utilisateur)
         return qs

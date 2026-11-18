@@ -10,7 +10,7 @@ from decouple import Csv, config
 
 BASE_DIR = Path(__file__).resolve().parent.parent
 
-SECRET_KEY = config('SECRET_KEY', default='cle-de-developpement-a-remplacer')
+SECRET_KEY = config('SECRET_KEY', default='cle-de-developpement-a-remplacer')  # refusée hors DEBUG (core.E001)
 DEBUG = config('DEBUG', default=False, cast=bool)
 ALLOWED_HOSTS = config('ALLOWED_HOSTS', default='localhost,127.0.0.1', cast=Csv())
 
@@ -108,12 +108,15 @@ CORS_ALLOWED_ORIGINS = config(
 
 REST_FRAMEWORK = {
     'DEFAULT_AUTHENTICATION_CLASSES': (
-        'rest_framework_simplejwt.authentication.JWTAuthentication',
+        'core.authentication.AuthentificationJWT',
     ),
     'DEFAULT_PERMISSION_CLASSES': (
         'rest_framework.permissions.IsAuthenticated',
         'core.permissions.CompteActif',
     ),
+    # Nombre de proxys devant Django (0 : X-Forwarded-For ignoré). Sert à la
+    # limitation des connexions et à l'adresse IP du journal d'audit.
+    'NUM_PROXIES': config('NUM_PROXIES', default=0, cast=int),
     'DEFAULT_PAGINATION_CLASS': 'core.pagination.PaginationStandard',
     'PAGE_SIZE': 20,
     'EXCEPTION_HANDLER': 'core.exceptions.exception_handler',
@@ -145,3 +148,6 @@ import sys  # noqa: E402
 
 if len(sys.argv) > 1 and sys.argv[1] == 'test':
     PASSWORD_HASHERS = ['django.contrib.auth.hashers.MD5PasswordHasher']
+    # Les tests tournent avec DEBUG=False : clé propre aux tests (vérification core.E001).
+    if SECRET_KEY == 'cle-de-developpement-a-remplacer':
+        SECRET_KEY = 'cle-propre-aux-tests-automatiques'

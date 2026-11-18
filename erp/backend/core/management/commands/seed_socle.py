@@ -55,9 +55,10 @@ class Command(BaseCommand):
         parser.add_argument('--reset', action='store_true', help='Vide les données du socle avant (DEBUG seulement).')
 
     def handle(self, *args, **options):
+        # Comptes de démo au mot de passe publié : jamais hors développement.
+        if not settings.DEBUG:
+            raise CommandError('seed_socle est refusé quand DEBUG=False (comptes de démonstration).')
         if options['reset']:
-            if not settings.DEBUG:
-                raise CommandError('--reset est refusé quand DEBUG=False.')
             self._vider()
         with transaction.atomic():
             annee = self._calendrier()

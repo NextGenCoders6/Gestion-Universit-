@@ -98,6 +98,10 @@ class MoiView(APIView):
 
 
 class DeconnexionView(APIView):
+    # Possible même pour un profil suspendu : invalider son refresh token est souhaitable.
+    authentication_classes = []
+    permission_classes = []
+
     def post(self, request):
         try:
             RefreshToken(request.data.get('refresh', '')).blacklist()

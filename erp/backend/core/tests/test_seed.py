@@ -6,6 +6,7 @@ from core.droits import modules_accessibles, roles_contextuels
 from core.models import AnneeAcademique, Classe
 
 
+@override_settings(DEBUG=True)
 class SeedSocleTests(TestCase):
     def test_seed_idempotent(self):
         call_command('seed_socle', verbosity=0)

@@ -1,7 +1,7 @@
 from django.db.models import Q
 from rest_framework import serializers, viewsets
 from rest_framework.decorators import action
-from rest_framework.exceptions import ValidationError
+from rest_framework.exceptions import APIException, ValidationError
 from rest_framework.permissions import SAFE_METHODS, BasePermission
 from rest_framework.response import Response
 
@@ -10,6 +10,11 @@ from core.droits import a_droit, modules_accessibles
 from core.models import Personne
 
 ROLES = ('etudiant', 'enseignant', 'employe')
+
+
+class SuppressionImpossible(APIException):
+    status_code = 400
+    default_code = 'suppression_impossible'
 
 
 class PersonnesPermission(BasePermission):
@@ -58,6 +63,21 @@ class PersonneViewSet(viewsets.ModelViewSet):
         if role in ROLES:
             qs = qs.filter(**{f'{role}__isnull': False})
         return qs
+
+    def perform_destroy(self, personne):
+        # Supprimer la fiche effacerait en cascade ses rôles (matricule, département…).
+        utilisations = [libelle for role, libelle in (('etudiant', 'un dossier étudiant'),
+                        ('enseignant', 'une fiche enseignant'), ('employe', 'une fiche employé'))
+                        if hasattr(personne, role)]
+        if personne.user_id:
+            utilisations.append('un compte utilisateur')
+        if utilisations:
+            raise SuppressionImpossible(
+                f'Suppression impossible : la personne est encore utilisée par {", ".join(utilisations)}.'
+            )
+        description = str(personne)
+        personne.delete()
+        journaliser(self.request, 'parametres', 'suppression_personne', description)
 
     @action(detail=True, methods=['post'])
     def suspendre(self, request, pk=None):
