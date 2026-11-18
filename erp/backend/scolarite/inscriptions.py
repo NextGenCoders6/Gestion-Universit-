@@ -11,6 +11,9 @@ APRES_INSCRIPTION = []
 # inscription (la Finance y branche les mensualités échues non payées).
 MOTIFS_MASQUAGE_RESULTATS = []
 
+# Rappels appelés après un changement de classe dans l'année (la Finance y recalcule le dossier de frais).
+APRES_CHANGEMENT_CLASSE = []
+
 
 @transaction.atomic
 def inscrire(etudiant, classe, *, type, date=None):

@@ -112,7 +112,7 @@ class FraisViewSet(viewsets.ViewSet):
         try:
             parsees = [(str(l['mois']), _date(l['date_limite'], 'date_limite'), montant_valide(l['montant']))
                        for l in lignes]
-        except (KeyError, TypeError):
+        except (KeyError, TypeError, AttributeError):
             raise ValidationError({'echeances': 'Chaque mensualité a un mois, une date limite et un montant.'})
         service_frais.adapter_echeancier(dossier, parsees, par=request.user)
         journaliser(request, 'finance', 'echeancier_adapte', f'{dossier.inscription} : {len(parsees)} mensualité(s)')
@@ -149,7 +149,10 @@ class PaieViewSet(viewsets.ViewSet):
         if params.get('origine') in ('salaire', 'vacation'):
             qs = qs.filter(origine=params['origine'])
         if params.get('mois'):
-            qs = qs.filter(mois=params['mois'])
+            filtre = Q(mois=params['mois'])
+            if params.get('avec_vacations') == 'true':
+                filtre |= Q(origine='vacation')
+            qs = qs.filter(filtre)
         if params.get('role') == 'enseignant':
             qs = qs.filter(Exists(Enseignant.objects.filter(pk=OuterRef('personne_id'))))
         elif params.get('role') == 'employe':
@@ -165,7 +168,7 @@ class PaieViewSet(viewsets.ViewSet):
         if q:
             qs = qs.filter(Q(personne__nom__icontains=q) | Q(personne__prenom__icontains=q))
         return qs.select_related('personne__enseignant', 'personne__employe').order_by(
-            '-mois', 'origine', 'personne__nom', 'personne__prenom')
+            '-origine', '-mois', 'personne__nom', 'personne__prenom')   # vacations d'abord
 
     def list(self, request):
         from core.pagination import PaginationStandard
@@ -285,7 +288,8 @@ class TableauDeBordView(APIView):
         attendus = sum((d.montant_du for d in dossiers), Decimal('0'))
         encaisses = sum((min(d.montant_paye, d.montant_du) for d in dossiers), Decimal('0'))
         retards = [service_frais.montant_en_retard(d, echeances=list(d.echeances.all())) for d in dossiers]
-        operations = Operation.objects.all()
+        # Un paiement annulé et sa contre-écriture s'effacent : ni recette ni dépense.
+        operations = Operation.objects.filter(annule__isnull=True, annulation__isnull=True)
         if annee:
             operations = operations.filter(date__gte=annee.date_debut, date__lte=annee.date_fin)
         recettes = operations.filter(montant__gt=0).aggregate(s=Sum('montant'))['s'] or Decimal('0')
@@ -296,7 +300,8 @@ class TableauDeBordView(APIView):
         mois = _mois_precedents(12, jour)
         debut = date(mois[0][0], mois[0][1], 1)
         par_mois = {}
-        for ligne in (Operation.objects.filter(date__gte=debut, date__lte=jour).annotate(m=TruncMonth('date'))
+        for ligne in (Operation.objects.filter(annule__isnull=True, annulation__isnull=True, date__gte=debut, date__lte=jour)
+                      .annotate(m=TruncMonth('date'))
                       .values('m').annotate(r=Sum('montant', filter=Q(montant__gt=0)),
                                             d=Sum('montant', filter=Q(montant__lt=0)))):
             par_mois[(ligne['m'].year, ligne['m'].month)] = (ligne['r'] or 0, -(ligne['d'] or 0))

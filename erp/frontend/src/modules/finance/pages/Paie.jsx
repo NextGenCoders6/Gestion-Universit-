@@ -43,7 +43,11 @@ export default function Paie({ role, titre }) {
   const [filtre, setFiltre] = useState({ origine: '', statut: '' });
   const [dialogue, setDialogue] = useState(null);
   const [ouverte, setOuverte] = useState(null);
-  const requete = { role, page_size: 200, ...(filtre.origine ? { origine: filtre.origine } : {}), ...(filtre.statut ? { statut: filtre.statut } : {}) };
+  // Les salaires du mois choisi, et toujours toutes les vacations (sans mois) : aucune ne disparaît de la liste.
+  const parMois = !/^\d{4}-\d{2}$/.test(mois) ? {}
+    : filtre.origine === 'salaire' ? { mois, origine: 'salaire' } : { mois, avec_vacations: 'true' };
+  const requete = { role, page_size: 200, ...(filtre.origine === 'vacation' ? { origine: 'vacation' } : parMois),
+    ...(filtre.statut ? { statut: filtre.statut } : {}) };
   const liste = useQuery({ queryKey: ['finance', 'paie', requete], queryFn: () => api.listerPaie(requete), placeholderData: keepPreviousData });
   const rafraichir = () => client.invalidateQueries({ queryKey: ['finance'] });
   const generer = async () => {
@@ -58,12 +62,10 @@ export default function Paie({ role, titre }) {
     <div className="space-y-4">
       <PageHeader titre={titre} description="Salaires mensuels des permanents et vacations confirmées par la faculté." />
       <div className="flex flex-wrap items-end gap-3">
-        {responsable && (
-          <div className="flex items-end gap-2">
-            <div className="space-y-1.5"><Label htmlFor="mois">Mois</Label><Input id="mois" type="month" value={mois} onChange={(e) => setMois(e.target.value)} className="w-44" /></div>
-            <Button onClick={generer} disabled={!/^\d{4}-\d{2}$/.test(mois)}>Générer la paie</Button>
-          </div>
-        )}
+        <div className="flex items-end gap-2">
+          <div className="space-y-1.5"><Label htmlFor="mois">Mois</Label><Input id="mois" type="month" value={mois} onChange={(e) => setMois(e.target.value)} className="w-44" /></div>
+          {responsable && <Button onClick={generer} disabled={!/^\d{4}-\d{2}$/.test(mois)}>Générer la paie</Button>}
+        </div>
         <Selecteur id="origine" label="Origine" vide="Toutes" valeur={filtre.origine} className="w-44"
           options={[{ valeur: 'salaire', libelle: 'Salaires' }, { valeur: 'vacation', libelle: 'Vacations' }]} onChange={(v) => setFiltre((f) => ({ ...f, origine: v }))} />
         <Selecteur id="statut" label="Statut" vide="Tous" valeur={filtre.statut} className="w-44"

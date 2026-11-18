@@ -23,3 +23,7 @@ class FinanceConfig(AppConfig):
         from scolarite import inscriptions as scol
         if motif_masquage_resultats not in scol.MOTIFS_MASQUAGE_RESULTATS:
             scol.MOTIFS_MASQUAGE_RESULTATS.append(motif_masquage_resultats)
+
+        from finance.frais import recalculer_dossier
+        if recalculer_dossier not in scol.APRES_CHANGEMENT_CLASSE:
+            scol.APRES_CHANGEMENT_CLASSE.append(recalculer_dossier)

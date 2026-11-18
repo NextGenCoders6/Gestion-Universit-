@@ -30,8 +30,10 @@ describe('Espace étudiant — frais', () => {
   it('résultats masqués : message', async () => {
     api.mesNotes.mockResolvedValue({ matricule: 'M', inscriptions: [{ inscription: 1, classe: 'L1 MIP — 2026-2027', annee: '2026-2027',
       statut: 'active', resultats_masques: true, message_resultats: 'Vos moyennes s’afficheront quand votre mensualité échue sera réglée.',
-      semestres: [] }] });
+      semestres: [{ semestre: 'S1', deliberee: true, resultat: null, ues: [] }] }] });
     rendre(<MesNotes />);
     expect(await screen.findByText(/quand votre mensualité échue sera réglée/)).toBeInTheDocument();
+    expect(screen.getByText('Délibéré — résultat masqué')).toBeInTheDocument();
+    expect(screen.queryByText('En attente de délibération')).not.toBeInTheDocument();
   });
 });

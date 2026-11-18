@@ -18,7 +18,7 @@ function Semestre({ s }) {
             </span>
             {note(r.moyenne)} / 20 · {r.credits_obtenus}/{r.credits_totaux} crédits{r.mention !== 'NÉANT' ? ` · ${r.mention}` : ''}
           </p>
-        ) : <p className="text-sm text-muted-foreground">En attente de délibération</p>}
+        ) : <p className="text-sm text-muted-foreground">{s.deliberee ? 'Délibéré — résultat masqué' : 'En attente de délibération'}</p>}
       </header>
       <table className="w-full text-sm">
         <thead className="text-xs text-muted-foreground"><tr>

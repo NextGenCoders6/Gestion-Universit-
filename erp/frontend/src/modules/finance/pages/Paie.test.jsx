@@ -41,4 +41,11 @@ describe('Finance — paie', () => {
     await user.click(screen.getByRole('button', { name: /Générer la paie/ }));
     await waitFor(() => expect(api.genererPaie).toHaveBeenCalledWith('2026-10'));
   });
+
+  it('liste du mois courant avec toutes les vacations', async () => {
+    rendre(['utilisateur']);
+    await screen.findByText('BOUANGA Marc');
+    const mois = new Date().toISOString().slice(0, 7);
+    expect(api.listerPaie).toHaveBeenLastCalledWith(expect.objectContaining({ role: 'employe', mois, avec_vacations: 'true' }));
+  });
 });

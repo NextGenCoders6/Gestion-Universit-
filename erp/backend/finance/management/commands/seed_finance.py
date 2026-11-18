@@ -6,6 +6,7 @@ from django.conf import settings
 from django.contrib.auth.models import User
 from django.core.management import BaseCommand, CommandError, call_command
 from django.db import transaction
+from django.utils import timezone
 
 from core.models import AnneeAcademique, Classe, Etudiant, Filiere, Parcours, Personne
 from finance import frais, paie, paiements
@@ -65,7 +66,10 @@ class Command(BaseCommand):
             if dossier.paiements.exists():
                 continue
             if etudiant and dossier.inscription.etudiant.personne.user_id == etudiant.pk:
-                montant = MENSUALITE * 2                     # compte de démonstration : à jour
+                # Compte de démonstration : à jour à la date du seed (mensualités échues + la suivante).
+                jour = timezone.localdate()
+                echues = [e.montant for e in dossier.echeances.all() if e.date_limite < jour]
+                montant = min(dossier.montant_du, sum(echues, Decimal('0')) + MENSUALITE)
             else:
                 montant = {0: dossier.montant_du, 1: MENSUALITE, 2: MENSUALITE * 2, 3: Decimal('0'),
                            4: MENSUALITE / 2}[n % 5]

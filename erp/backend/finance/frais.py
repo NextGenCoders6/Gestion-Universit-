@@ -57,6 +57,24 @@ def regenerer_echeances(dossier, tarif=None):
     _remplacer_echeances(dossier, echeancier(dossier.montant_du, *_modalite(dossier, tarif)))
 
 
+def redistribuer(dossier, montant):
+    """Mêmes mois et dates, montants mis à l'échelle de `montant` (la dernière mensualité prend l'arrondi).
+
+    Garde les proportions d'un échéancier adapté ; sans échéances, en crée selon la modalité.
+    """
+    actuelles = list(dossier.echeances.all())
+    total = sum((e.montant for e in actuelles), Decimal('0'))
+    if not actuelles or total <= 0:
+        regenerer_echeances(dossier)
+        return
+    if montant <= 0:
+        _remplacer_echeances(dossier, [])
+        return
+    parts = [(e.montant * montant / total).quantize(Decimal('1'), rounding=ROUND_DOWN) for e in actuelles[:-1]]
+    parts.append(montant - sum(parts, Decimal('0')))
+    _remplacer_echeances(dossier, [(e.mois, e.date_limite, p) for e, p in zip(actuelles, parts)])
+
+
 @transaction.atomic
 def creer_dossier(inscription):
     """Rappel APRES_INSCRIPTION : dossier au tarif du niveau (0 sans tarif), avec son échéancier."""
@@ -77,7 +95,9 @@ def appliquer_tarif(tarif):
     for dossier in dossiers.select_related('inscription__annee', 'inscription__classe'):
         dossier.montant_du = tarif.montant
         dossier.save(update_fields=['montant_du'])
-        if not dossier.echeancier_adapte:
+        if dossier.echeancier_adapte:
+            redistribuer(dossier, tarif.montant)    # la somme des mensualités reste égale au montant dû
+        else:
             regenerer_echeances(dossier, tarif)
 
 
@@ -91,18 +111,19 @@ def ajuster(dossier, montant, par=None):
     dossier.montant_du = montant
     dossier.montant_ajuste = True
     dossier.save()
-    actuelles = list(dossier.echeances.all())
-    if actuelles:
-        parts = [x for _, _, x in echeancier(montant, len(actuelles), actuelles[0].mois, 1)] if montant > 0 else []
-        _remplacer_echeances(dossier, [(e.mois, e.date_limite, p) for e, p in zip(actuelles, parts)])
-    else:
-        regenerer_echeances(dossier)
+    redistribuer(dossier, montant)
     return dossier
 
 
 @transaction.atomic
 def adapter_echeancier(dossier, lignes, par=None):
     """Échéancier fixé à la main : somme = montant dû, dates strictement croissantes."""
+    from finance.models import MOIS
+    for m, d, _ in lignes:
+        if not MOIS.match(str(m or '')):
+            raise ValidationError({'echeances': f'Mois invalide « {m} » (AAAA-MM attendu).'})
+        if not isinstance(d, date):
+            raise ValidationError({'echeances': 'Chaque mensualité a une date limite.'})
     lignes = [(m, d, Decimal(x)) for m, d, x in lignes]
     if any(x <= 0 for _, _, x in lignes):
         raise ValidationError({'echeances': 'Chaque mensualité doit être positive.'})
@@ -170,3 +191,20 @@ def motif_masquage_resultats(inscription):
         return None
     return (f'Vos moyennes et décisions de {inscription.annee.libelle} s’afficheront quand votre mensualité échue '
             f'sera réglée (reste à régler : {retard:,.0f} FCFA).'.replace(',', ' '))
+
+
+def recalculer_dossier(inscription):
+    """Rappel APRES_CHANGEMENT_CLASSE : le dossier suit le tarif du nouveau niveau (sauf montant fixé à la main)."""
+    dossier = FraisScolarite.objects.filter(inscription=inscription).first()
+    if dossier is None:
+        creer_dossier(inscription)
+        return
+    if dossier.montant_ajuste:
+        return
+    tarif = tarif_de(inscription)
+    dossier.montant_du = tarif.montant if tarif else Decimal('0')
+    dossier.save(update_fields=['montant_du'])
+    if dossier.echeancier_adapte:
+        redistribuer(dossier, dossier.montant_du)
+    else:
+        regenerer_echeances(dossier, tarif)
