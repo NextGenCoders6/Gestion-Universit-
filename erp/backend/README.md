@@ -26,6 +26,7 @@ Pour un essai rapide sans MySQL, mettre `DB_ENGINE=sqlite` dans `.env`.
 .venv/bin/python manage.py seed_edt      # emploi du temps de démonstration
 .venv/bin/python manage.py seed_scolarite  # étudiants, notes, délibération S1 de la L1 MIP, année 2027-2028
 .venv/bin/python manage.py seed_rh         # contrats, personnel, une vacation à confirmer et une confirmée
+.venv/bin/python manage.py seed_finance    # tarifs (1 500 000 FCFA en 10 mensualités), paiements, paie d'octobre, journal
 .venv/bin/python manage.py runserver
 ```
 
@@ -34,7 +35,7 @@ Pour un essai rapide sans MySQL, mettre `DB_ENGINE=sqlite` dans `.env`.
 ## Tests
 
 ```bash
-DB_ENGINE=sqlite .venv/bin/python manage.py test core edt scolarite rh
+DB_ENGINE=sqlite .venv/bin/python manage.py test core edt scolarite rh finance
 ```
 
 ## Comptes de démonstration
