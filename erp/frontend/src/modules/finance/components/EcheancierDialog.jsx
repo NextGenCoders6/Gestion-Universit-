@@ -5,7 +5,7 @@ import { Input } from '@/components/ui/input';
 import { Plus, Trash2 } from '@/components/ui/icons';
 import ErreurFormulaire from '@/components/shared/ErreurFormulaire';
 import FormModal from '@/components/shared/FormModal';
-import { erreursServeur } from '@/lib/erreurs';
+import { messageErreur } from '@/lib/erreurs';
 import { fcfa } from '../lib/format';
 
 export default function EcheancierDialog({ dossier, envoyer, onFermer }) {
@@ -17,7 +17,7 @@ export default function EcheancierDialog({ dossier, envoyer, onFermer }) {
   const valider = async () => {
     if (total !== dossier.montant_du) { setErreur(`La somme (${fcfa(total)}) doit égaler le montant dû (${fcfa(dossier.montant_du)}).`); return; }
     setEnCours(true);
-    try { await envoyer(lignes); onFermer(); } catch (e) { setErreur(erreursServeur(e).global ?? 'Échéancier refusé.'); } finally { setEnCours(false); }
+    try { await envoyer(lignes); onFermer(); } catch (e) { setErreur(messageErreur(e)); } finally { setEnCours(false); }
   };
   return (
     <FormModal open onClose={onFermer} title="Adapter l’échéancier" description={`Montant dû : ${fcfa(dossier.montant_du)}`}

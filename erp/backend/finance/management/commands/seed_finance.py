@@ -75,21 +75,23 @@ class Command(BaseCommand):
                            4: MENSUALITE / 2}[n % 5]
             if montant > 0:
                 paiements.encaisser(dossier, montant, MODES[n % 4], date=date(2026, 10, 10 + n % 15),
-                                    reference=f'DEMO-{n:03d}', par=self.caisse)
+                                    reference=f'DEMO-{n:03d}', par=self.caisse, historique=True)
 
     def _paie(self):
         paie.generer_salaires('2026-10', par=self.responsable)
         for n, ligne in enumerate(Paie.objects.filter(mois='2026-10').order_by('pk')):
             if n % 2 == 0 and not ligne.paiements.exists():
-                paie.payer(ligne, ligne.montant_du, 'virement', date=date(2026, 10, 31), par=self.responsable)
+                paie.payer(ligne, ligne.montant_du, 'virement', date=date(2026, 10, 31), par=self.responsable,
+                           historique=True)
         from rh.models import Vacation
         for vacation in Vacation.objects.all():
             ligne = Paie.objects.filter(vacation=vacation).first() or paie.creer_ligne_vacation(vacation)
             if not ligne.paiements.exists():
-                paie.payer(ligne, ligne.montant_du, 'mobile_money', date=date(2026, 11, 2), par=self.responsable)
+                paie.payer(ligne, ligne.montant_du, 'mobile_money', date=date(2026, 11, 2), par=self.responsable,
+                           historique=True)
 
     def _operations(self):
         for libelle, montant, jour in (('Don de la paroisse Saint-Esprit', '250000', date(2026, 10, 20)),
                                        ('Achat de fournitures de bureau', '-85000', date(2026, 11, 3))):
             if not Operation.objects.filter(libelle=libelle).exists():
-                paiements.operation_manuelle(libelle, montant, jour, par=self.responsable)
+                paiements.operation_manuelle(libelle, montant, jour, par=self.responsable, historique=True)

@@ -40,3 +40,8 @@ export async function telecharger(chemin, nomFichier) {
   lien.click();
   setTimeout(() => URL.revokeObjectURL(url), 1000);
 }
+
+export const listerTransports = (params = {}) => apiClient.get('/finance/transports/', { params }).then(donnees);
+export const creerDepense = (d) => apiClient.post('/finance/transports/', d).then(donnees);
+export const annulerDepense = (id, motif) => apiClient.post(`/finance/transports/${id}/annuler/`, { motif }).then(donnees);
+export const listerBusFinance = () => apiClient.get('/finance/transports/bus/').then(donnees);

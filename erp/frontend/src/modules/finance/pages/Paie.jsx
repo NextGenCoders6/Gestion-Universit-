@@ -8,7 +8,7 @@ import { Printer } from '@/components/ui/icons';
 import PageHeader from '@/components/shared/PageHeader';
 import Selecteur from '@/components/shared/Selecteur';
 import { useToast } from '@/hooks/use-toast';
-import { erreursServeur } from '@/lib/erreurs';
+import { messageErreur } from '@/lib/erreurs';
 import * as api from '../api';
 import { BadgeStatut } from '../components/Badges';
 import { MontantDialog, MotifDialog, PaiementDialog } from '../components/Dialogues';
@@ -20,7 +20,7 @@ function Paiements({ ligne, responsable, onAnnuler }) {
   const detail = useQuery({ queryKey: ['finance', 'ligne-paie', ligne.id], queryFn: () => api.lignePaie(ligne.id) });
   const recu = async (p) => {
     try { await api.telecharger(`/finance/paiements-paie/${p.id}/recu.pdf`, `recu-${p.numero}.pdf`); } catch (e) {
-      toast({ title: 'Reçu indisponible', description: erreursServeur(e).global, variant: 'destructive' });
+      toast({ title: 'Reçu indisponible', description: messageErreur(e), variant: 'destructive' });
     }
   };
   return (
@@ -55,7 +55,7 @@ export default function Paie({ role, titre }) {
       const r = await api.genererPaie(mois);
       rafraichir();
       toast({ title: `Paie de ${r.mois}`, description: `${r.creees} ligne(s) créée(s), ${r.existantes} déjà présente(s).` });
-    } catch (e) { toast({ title: 'Génération impossible', description: erreursServeur(e).global, variant: 'destructive' }); }
+    } catch (e) { toast({ title: 'Génération impossible', description: messageErreur(e), variant: 'destructive' }); }
   };
   const lignes = liste.data?.results ?? [];
   return (

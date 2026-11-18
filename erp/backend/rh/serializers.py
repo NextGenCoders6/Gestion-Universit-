@@ -40,6 +40,16 @@ class ContratSerializer(serializers.ModelSerializer):
     def get_etat(self, obj):
         return obj.etat()
 
+    def validate(self, attrs):
+        c = self.instance
+        if c is not None:
+            if 'personne' in attrs and attrs['personne'] != c.personne:
+                raise serializers.ValidationError({'personne': 'Un contrat ne change pas de titulaire : créez-en un nouveau.'})
+            utilise = c.vacations.exists() or (hasattr(c, 'paies') and c.paies.exists())
+            if utilise and 'type' in attrs and attrs['type'] != c.type:
+                raise serializers.ValidationError({'type': 'Ce contrat a déjà des vacations ou de la paie : son type ne change plus.'})
+        return attrs
+
     def get_role(self, obj):
         return 'enseignant' if hasattr(obj.personne, 'enseignant') else 'employe'
 

@@ -2,7 +2,7 @@
 from datetime import timedelta
 
 from django.core.exceptions import ValidationError
-from django.db.models import Q
+from django.db.models import Exists, OuterRef, Q
 from django.utils import timezone
 
 from rh.models import Contrat
@@ -24,8 +24,10 @@ def contrat_en_cours(personne, jour=None, type=None):
 def contrats_a_echeance(jours=30, jour=None):
     """Contrats en cours qui se terminent dans les `jours` prochains jours."""
     jour = jour or timezone.localdate()
+    # Un contrat déjà suivi d'un autre (renouvelé) n'est plus une échéance à traiter.
+    suivant = Contrat.objects.filter(personne_id=OuterRef('personne_id'), date_debut__gt=OuterRef('date_fin'))
     return (Contrat.objects.filter(date_debut__lte=jour, date_fin__gte=jour, date_fin__lte=jour + timedelta(days=jours))
-            .select_related('personne').order_by('date_fin'))
+            .exclude(Exists(suivant)).select_related('personne').order_by('date_fin'))
 
 
 def terminer(contrat, date_fin):

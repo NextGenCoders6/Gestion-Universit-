@@ -23,10 +23,21 @@ def montant_valide(valeur, *, positif=True, champ='montant'):
     return d
 
 
-def date_valide(jour, champ='date'):
-    jour = jour or timezone.localdate()
-    if jour > timezone.localdate():
+def date_minimale(aujourdhui):
+    """1er septembre de l'année académique précédente : on ne saisit pas plus ancien."""
+    debut_annee = aujourdhui.year if aujourdhui.month >= 9 else aujourdhui.year - 1
+    return aujourdhui.replace(year=debut_annee - 1, month=9, day=1)
+
+
+def date_valide(jour, champ='date', historique=False):
+    """Pas de date future ; pas plus ancienne que l'année académique précédente, sauf écriture
+    historique (données de démonstration datées de leur année)."""
+    aujourdhui = timezone.localdate()
+    jour = jour or aujourdhui
+    if jour > aujourdhui:
         raise ValidationError({champ: 'La date ne peut pas être dans le futur.'})
+    if not historique and jour < date_minimale(aujourdhui):
+        raise ValidationError({champ: f'La date ne peut pas précéder le {date_minimale(aujourdhui):%d/%m/%Y}.'})
     return jour
 
 

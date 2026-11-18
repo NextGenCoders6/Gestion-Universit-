@@ -10,6 +10,7 @@ from django.conf import settings
 from django.contrib.auth.models import User
 from django.core.management.base import BaseCommand, CommandError
 from django.db import transaction
+from django.db.models import ProtectedError, RestrictedError
 
 from core.droits import definir_droits, tous_les_groupes
 from core.models import (
@@ -71,10 +72,22 @@ class Command(BaseCommand):
     def _vider(self):
         # Les données des modules (EDT, Scolarité…) protègent le référentiel : on les vide d'abord,
         # module par module dans l'ordre inverse d'installation, modèles du dernier au premier.
-        for app in reversed(list(apps.get_app_configs())):
-            if app.name in MODULES_METIER:
-                for modele in reversed(list(app.get_models())):
+        # Les clés PROTECT croisent les modules (ex. dépense de transport → bus) : on supprime par passes
+        # successives jusqu'à ce que tout soit vide.
+        modeles = [m for app in reversed(list(apps.get_app_configs())) if app.name in MODULES_METIER
+                   for m in reversed(list(app.get_models()))]
+        for _ in range(len(modeles) + 1):
+            restants = []
+            for modele in modeles:
+                try:
                     modele.objects.all().delete()
+                except (ProtectedError, RestrictedError):
+                    restants.append(modele)
+            if not restants:
+                break
+            modeles = restants
+        else:
+            raise CommandError(f'Impossible de vider : {", ".join(m.__name__ for m in modeles)}.')
         for modele in (JournalAudit, RattachementFaculte, ElementConstitutif, UniteEnseignement, Classe,
                        Etudiant, Employe, Enseignant):
             modele.objects.all().delete()

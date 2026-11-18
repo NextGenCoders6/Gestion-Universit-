@@ -1,4 +1,5 @@
 /** Situation des frais de l'étudiant : échéancier, prochaine échéance, retards, paiements et reçus. */
+import { useState } from 'react';
 import { useQuery } from '@tanstack/react-query';
 import { Button } from '@/components/ui/button';
 import { AlertTriangle, Printer } from '@/components/ui/icons';
@@ -9,6 +10,11 @@ import * as api from '../api';
 
 function Dossier({ d }) {
   const p = d.prochaine_echeance;
+  const [erreurRecu, setErreurRecu] = useState(null);
+  const recu = async (x) => {
+    setErreurRecu(null);
+    try { await api.telechargerRecu(x); } catch { setErreurRecu(`Le reçu ${x.numero} n’a pas pu être téléchargé. Réessayez plus tard.`); }
+  };
   return (
     <section className="space-y-3 rounded-lg border border-border bg-card p-4">
       <header className="flex flex-wrap items-center justify-between gap-2">
@@ -39,8 +45,9 @@ function Dossier({ d }) {
         <ul className="space-y-1">{d.paiements.map((x) => (
           <li key={x.id} className="flex items-center justify-between gap-2 rounded-md bg-muted/40 px-3 py-1.5 text-sm">
             <span>{dateFr(x.date)} · {fcfa(x.montant)} · {x.mode_libelle}</span>
-            <Button size="sm" variant="ghost" aria-label={`Reçu ${x.numero}`} onClick={() => api.telechargerRecu(x)}><Printer /> Reçu</Button>
+            <Button size="sm" variant="ghost" aria-label={`Reçu ${x.numero}`} onClick={() => recu(x)}><Printer /> Reçu</Button>
           </li>))}</ul>
+        {erreurRecu && <p role="alert" className="mt-2 text-sm text-destructive">{erreurRecu}</p>}
       </div>
     </section>
   );

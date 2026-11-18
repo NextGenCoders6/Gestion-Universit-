@@ -377,7 +377,8 @@ class MesFraisView(APIView):
         donnees = []
         for d in dossiers:
             j = dossier_json(d, detail=True)
-            j['paiements'] = [p for p in j['paiements'] if not p['annule']]
+            # L'étudiant ne voit ni les paiements annulés ni qui les a saisis.
+            j['paiements'] = [{k: v for k, v in p.items() if k != 'par'} for p in j['paiements'] if not p['annule']]
             donnees.append(j)
         return Response(donnees)
 
@@ -388,3 +389,71 @@ class MonRecuView(APIView):
         p = get_object_or_404(PaiementEtudiant.objects.select_related('operation'), pk=pk, annule=False,
                               dossier__inscription__etudiant__personne=personne)
         return reponse_pdf(recus.recu_paiement_etudiant(p), f'recu-{p.operation.numero}.pdf')
+
+
+# ── Dépenses de transport ────────────────────────────────────────
+
+def depense_json(d):
+    from finance.models import DepenseTransport
+    return {'id': d.pk, 'bus': d.bus_id, 'bus_numero': d.bus.numero, 'type': d.type,
+            'type_libelle': dict(DepenseTransport.TYPES)[d.type], 'montant': f(d.montant), 'description': d.description,
+            'date': d.date, 'numero': d.operation.numero, 'annule': d.annule, 'motif_annulation': d.motif_annulation}
+
+
+class TransportViewSet(viewsets.ViewSet):
+    permission_classes = [LectureFinance]
+
+    def list(self, request):
+        from core.pagination import PaginationStandard
+        from finance.models import DepenseTransport
+        qs = DepenseTransport.objects.select_related('bus', 'operation')
+        bus = entier(request, 'bus')
+        if bus is not None:
+            qs = qs.filter(bus_id=bus)
+        pagination = PaginationStandard()
+        page = pagination.paginate_queryset(qs, request, view=self)
+        return pagination.get_paginated_response([depense_json(d) for d in page])
+
+    def create(self, request):
+        from finance import transports
+        from logistique.models import Bus
+        bus = Bus.objects.filter(pk=entier_valeur(request.data.get('bus'))).first()
+        if bus is None:
+            raise ValidationError({'bus': 'Choisissez un bus.'})
+        d = transports.enregistrer(bus, request.data.get('type'), request.data.get('montant'),
+                                   date=_date(request.data.get('date')), description=request.data.get('description', ''),
+                                   par=request.user)
+        journaliser(request, 'finance', 'depense_transport', f'{d.operation.numero} — {d.operation.libelle} : {d.montant}')
+        return Response(depense_json(d), status=status.HTTP_201_CREATED)
+
+    @action(detail=False, methods=['get'])
+    def bus(self, request):
+        """Bus proposés à la saisie d'une dépense (la Finance n'a pas accès au module Logistique)."""
+        from logistique.models import Bus
+        return Response([{'id': b.pk, 'numero': b.numero, 'plaque': b.plaque, 'statut': b.statut}
+                         for b in Bus.objects.order_by('numero')])
+
+    @action(detail=True, methods=['post'], permission_classes=[ResponsableFinance])
+    def annuler(self, request, pk=None):
+        from finance import transports
+        from finance.models import DepenseTransport
+        d = get_object_or_404(DepenseTransport, pk=pk)
+        contre = transports.annuler_depense(d, request.data.get('motif', ''), par=request.user)
+        journaliser(request, 'finance', 'annulation_depense_transport', f'{contre.numero} — {contre.libelle}')
+        return Response(operation_json(contre))
+
+
+class RecuTransportView(APIView):
+    permission_classes = [Encaissement]
+
+    def get(self, request, pk):
+        from finance.models import DepenseTransport
+        d = get_object_or_404(DepenseTransport.objects.select_related('operation'), pk=pk)
+        return reponse_pdf(recus.recu_operation(d.operation), f'recu-{d.operation.numero}.pdf')
+
+
+def entier_valeur(valeur):
+    try:
+        return int(valeur)
+    except (TypeError, ValueError):
+        return None

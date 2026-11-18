@@ -170,6 +170,10 @@ def retirer(vacation, *, motif, par=None):
     motif = (motif or '').strip()
     if not motif:
         raise ValidationError({'motif': 'Indiquez le motif du retrait de la confirmation.'})
+    # Verrou : deux retraits simultanés (ou un objet périmé) ne retirent pas deux fois.
+    vacation = Vacation.objects.select_for_update().select_related('affectation').filter(pk=vacation.pk).first()
+    if vacation is None:
+        raise ValidationError("Cette vacation n'est plus confirmée.")
     for verification in list(VERIFICATIONS_RETRAIT):
         verification(vacation)
     HistoriqueVacation.objects.create(affectation=vacation.affectation, action='retrait',

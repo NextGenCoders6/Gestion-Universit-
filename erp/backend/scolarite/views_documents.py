@@ -1,17 +1,33 @@
 """Documents officiels (PDF) et page publique de vérification."""
+from django.db import transaction
 from django.shortcuts import get_object_or_404, render
 from django.views.decorators.http import require_GET
-from rest_framework.exceptions import ValidationError
+from rest_framework.exceptions import APIException, ValidationError
 from rest_framework.views import APIView
 
 from core.api.filtres import entier
 from core.audit import journaliser
-from core.documents import reponse_pdf
+from core.documents import ErreurPdf, reponse_pdf
 from scolarite.documents import attestation_pdf, matrice_pdf, releve_pdf
 from scolarite.models import DocumentEmis
 from scolarite.permissions import DroitScolarite, Faculte
 from scolarite.views_faculte import classe_demandee, programme_ou_400
 from scolarite.views_secretariat import etudiants_du_perimetre, inscriptions_visibles
+
+
+class PdfIndisponible(APIException):
+    status_code = 503
+    default_detail = 'Le PDF n’a pas pu être généré. Réessayez plus tard.'
+    default_code = 'pdf_indisponible'
+
+
+def _generer(fonction, *args):
+    """Document et PDF dans une même transaction : un PDF en échec ne laisse aucun document vérifiable."""
+    try:
+        with transaction.atomic():
+            return fonction(*args)
+    except ErreurPdf:
+        raise PdfIndisponible()
 
 
 def _inscription(request, pk):
@@ -37,7 +53,7 @@ class AttestationView(APIView):
         inscription = _inscription(request, pk)
         if inscription.statut == 'abandonnee':
             raise ValidationError({'detail': "L'étudiant a abandonné : aucune attestation de fréquentation."})
-        contenu, url = attestation_pdf(inscription, request.user)
+        contenu, url = _generer(attestation_pdf, inscription, request.user)
         journaliser(request, 'scolarite', 'attestation', f'{inscription}')
         return _avec_verification(reponse_pdf(contenu, f'attestation-{inscription.etudiant.matricule}.pdf'), url)
 
@@ -52,7 +68,7 @@ class ReleveView(APIView):
         resultat = inscription.resultats.filter(semestre=semestre).first()
         if resultat is None:
             raise ValidationError({'detail': f"Le semestre {semestre} n'est pas encore délibéré pour cet étudiant."})
-        contenu, url = releve_pdf(inscription, semestre, resultat, request.user)
+        contenu, url = _generer(releve_pdf, inscription, semestre, resultat, request.user)
         journaliser(request, 'scolarite', 'releve', f'{inscription} — {semestre}')
         return _avec_verification(reponse_pdf(contenu, f'releve-{inscription.etudiant.matricule}-{semestre}.pdf'), url)
 
@@ -65,7 +81,7 @@ class MatriceA3View(APIView):
         semestre = request.query_params.get('semestre', '')
         programme_ou_400(classe, semestre)
         nom = f'pv-{classe.parcours.code}-{(classe.portail or classe.filiere).code}-{semestre}.pdf'
-        return reponse_pdf(matrice_pdf(classe, semestre), nom)
+        return reponse_pdf(_generer(matrice_pdf, classe, semestre), nom)
 
 
 @require_GET

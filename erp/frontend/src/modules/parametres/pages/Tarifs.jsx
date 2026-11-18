@@ -22,7 +22,7 @@ function TarifDialog({ tarif, annees, parcours, onFermer }) {
   const { toast } = useToast();
   const [erreurs, setErreurs] = useState({ champs: {}, global: null });
   const form = useForm({ defaultValues: tarif
-    ? { ...tarif, annee: String(tarif.annee), parcours: String(tarif.parcours), montant: String(Math.round(tarif.montant)) }
+    ? { ...tarif, annee: String(tarif.annee), parcours: String(tarif.parcours), montant: String(Number(tarif.montant)) }
     : { annee: '', parcours: '', montant: '', nombre_mensualites: 10, premier_mois: '', jour_echeance: 5 } });
   const v = useWatch({ control: form.control });
   const annee = annees.find((a) => String(a.id) === String(v.annee));

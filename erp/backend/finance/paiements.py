@@ -14,10 +14,10 @@ def libelle_dossier(dossier):
 
 
 @transaction.atomic
-def encaisser(dossier, montant, mode, *, date=None, reference='', par=None):
+def encaisser(dossier, montant, mode, *, date=None, reference='', par=None, historique=False):
     montant = journal.montant_valide(montant)
     mode = journal.mode_valide(mode)
-    jour = journal.date_valide(date)
+    jour = journal.date_valide(date, historique=historique)
     # Verrou : deux encaissements simultanés ne dépassent jamais le reste dû.
     dossier = (FraisScolarite.objects.select_for_update()
                .select_related('inscription__etudiant__personne', 'inscription__classe').get(pk=dossier.pk))
@@ -51,14 +51,14 @@ def annuler_paiement(paiement, motif, par=None):
 
 
 @transaction.atomic
-def operation_manuelle(libelle, montant, date=None, par=None):
+def operation_manuelle(libelle, montant, date=None, par=None, historique=False):
     libelle = (libelle or '').strip()
     if not libelle:
         raise ValidationError({'libelle': 'Indiquez le libellé.'})
     montant = journal.montant_valide(montant, positif=False)
     if montant == 0:
         raise ValidationError({'montant': 'Le montant ne peut pas être nul (+ recette, − dépense).'})
-    return journal.ecrire(libelle, montant, 'manuelle', journal.date_valide(date), par)
+    return journal.ecrire(libelle, montant, 'manuelle', journal.date_valide(date, historique=historique), par)
 
 
 @transaction.atomic

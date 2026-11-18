@@ -1,4 +1,5 @@
 import { render, screen } from '@testing-library/react';
+import userEvent from '@testing-library/user-event';
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 import * as api from '../api';
@@ -35,5 +36,16 @@ describe('Espace étudiant — frais', () => {
     expect(await screen.findByText(/quand votre mensualité échue sera réglée/)).toBeInTheDocument();
     expect(screen.getByText('Délibéré — résultat masqué')).toBeInTheDocument();
     expect(screen.queryByText('En attente de délibération')).not.toBeInTheDocument();
+  });
+
+  it('reçu indisponible : message', async () => {
+    api.mesFrais.mockResolvedValue([{ id: 1, annee_libelle: '2026-2027', classe_libelle: 'L1 MIP — 2026-2027', montant_du: 300,
+      montant_paye: 150, reste: 150, en_retard: false, montant_en_retard: 0, statut: 'partiel', prochaine_echeance: null, echeances: [],
+      paiements: [{ id: 9, date: '2026-10-12', montant: 150, mode_libelle: 'Espèces', numero: 'OP-2026-000001', annule: false }] }]);
+    api.telechargerRecu.mockRejectedValue({ response: { status: 500 } });
+    const user = userEvent.setup();
+    rendre(<MesFrais />);
+    await user.click(await screen.findByRole('button', { name: /Reçu OP-2026-000001/ }));
+    expect(await screen.findByRole('alert')).toHaveTextContent(/reçu/i);
   });
 });
