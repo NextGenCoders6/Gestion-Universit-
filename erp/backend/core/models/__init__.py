@@ -4,3 +4,4 @@ from .referentiel import (  # noqa: F401
 )
 from .personnes import Employe, Enseignant, Etudiant, Personne, generer_matricule_etudiant  # noqa: F401
 from .acces import RattachementFaculte  # noqa: F401
+from .audit import JournalAudit  # noqa: F401
