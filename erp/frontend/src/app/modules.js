@@ -67,6 +67,7 @@ export const REGISTRE = [
       { chemin: 'paie-enseignants', libelle: 'Paie des enseignants', icone: BookOpen },
       { chemin: 'paie-personnel', libelle: 'Paie du personnel', icone: Users },
       { chemin: 'journal', libelle: 'Journal', icone: List },
+      { chemin: 'transports', libelle: 'Transports', icone: MapPin },
     ],
   },
   {
@@ -75,7 +76,13 @@ export const REGISTRE = [
     description: 'Bus, trajets et affectations des chauffeurs.',
     icone: MapPin,
     chemin: '/logistique',
-    menu: [],
+    menu: [
+      { chemin: 'tableau-de-bord', libelle: 'Tableau de bord', icone: BarChart3 },
+      { chemin: 'bus', libelle: 'Bus', icone: MapPin },
+      { chemin: 'trajets', libelle: 'Trajets', icone: List },
+      { chemin: 'affectations', libelle: 'Affectations', icone: UserCheck },
+      { chemin: 'couts', libelle: 'Coûts', icone: FileSpreadsheet },
+    ],
   },
   {
     code: 'parametres',
