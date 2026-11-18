@@ -127,6 +127,14 @@ class ContratViewSet(viewsets.ModelViewSet):
         contrat = serializer.save()
         journaliser(self.request, 'rh', 'contrat', f'Modification : {contrat}')
 
+    def perform_destroy(self, contrat):
+        # Seul un contrat à venir s'annule ; un contrat commencé se termine (fin anticipée).
+        if contrat.etat() != 'a_venir':
+            raise ValidationError({'detail': 'Seul un contrat à venir peut être annulé : terminez plutôt ce contrat.'})
+        description = str(contrat)
+        contrat.delete()
+        journaliser(self.request, 'rh', 'annulation_contrat', description)
+
     @action(detail=True, methods=['post'])
     def terminer(self, request, pk=None):
         contrat = self.get_object()
@@ -240,9 +248,10 @@ class TableauDeBordView(APIView):
         libelles = dict(Employe.FONCTION_CHOICES)
         par_fonction = [{'fonction': x['fonction'], 'libelle': libelles.get(x['fonction'], x['fonction']), 'n': x['n']}
                         for x in employes_actifs.values('fonction').annotate(n=Count('pk')).order_by('-n', 'fonction')]
-        avenir = Contrat.objects.filter(date_debut__gt=jour).values('personne_id')
-        sans_contrat = (Contrat.objects.exclude(personne_id__in=list(par_personne)).exclude(personne_id__in=avenir)
-                        .values('personne_id').distinct().count())
+        # Enseignants et employés sans contrat en cours ni à venir (y compris ceux qui n'en ont jamais eu).
+        couverts = set(par_personne) | set(Contrat.objects.filter(date_debut__gt=jour).values_list('personne_id', flat=True))
+        personnes = set(Enseignant.objects.values_list('pk', flat=True)) | set(Employe.objects.values_list('pk', flat=True))
+        sans_contrat = len(personnes - couverts)
         a_confirmer = lignes_vacations(_Requete(request, 'a_confirmer'), affectations_de_vacataires(request))
         return Response({
             'enseignants_actifs': len(enseignants),

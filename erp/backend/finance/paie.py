@@ -42,6 +42,8 @@ def creer_ligne_vacation(vacation):
 
 def refuser_retrait_si_payee(vacation):
     """Rappel rh.vacations.VERIFICATIONS_RETRAIT : une vacation payée ne se retire pas."""
+    # Verrou sur la ligne de paie : un paiement ne peut pas se glisser entre ce contrôle et le retrait.
+    list(Paie.objects.select_for_update().filter(vacation=vacation))
     if PaiementPaie.objects.filter(paie__vacation=vacation, annule=False).exists():
         raise ValidationError('Cette vacation a déjà reçu un paiement : annulez d’abord le paiement en Finance.')
 
