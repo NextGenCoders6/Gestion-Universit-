@@ -9,3 +9,4 @@ factory_boy>=3.3
 xhtml2pdf>=0.2.11
 qrcode[pil]>=7.4
 openpyxl>=3.1
+gunicorn>=23.0
