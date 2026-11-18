@@ -20,7 +20,7 @@ from scolarite.moteur import deliberation, ligne_etudiant, programme
 from scolarite.perimetre import restreindre_par_faculte
 from scolarite.permissions import Faculte, Secretariat
 from scolarite.serialisation import ligne_json, programme_json, resultat_json
-from scolarite.views_secretariat import etudiants_du_perimetre
+from scolarite.views_secretariat import etudiants_du_perimetre, inscriptions_visibles
 
 CHAMPS_SAISIE = {'devoir': 'note_devoir', 'session': 'note_session', 'sr': 'note_sr'}
 CHAMPS_API = {v: k for k, v in CHAMPS_SAISIE.items()} | {'est_absent': 'absent'}
@@ -62,6 +62,11 @@ class SaisieView(APIView):
         ec = classe.ecs_au_programme().filter(pk=ec_id).first() if ec_id is not None else None
         if ec is None:
             raise ValidationError({'ec': "Choisissez un EC au programme de cette classe."})
+        if classe.annee.statut != 'archivee':
+            # Un EC ajouté au programme après les inscriptions reçoit ici ses lignes de notes.
+            deja = set(Note.objects.filter(inscription__classe=classe, ec=ec).values_list('inscription_id', flat=True))
+            manquantes = classe.inscriptions.exclude(statut='abandonnee').exclude(pk__in=deja)
+            Note.objects.bulk_create([Note(inscription=i, ec=ec) for i in manquantes], ignore_conflicts=True)
         notes = (Note.objects.filter(inscription__classe=classe, ec=ec)
                  .exclude(inscription__statut='abandonnee')
                  .select_related('inscription__etudiant__personne')
@@ -69,6 +74,7 @@ class SaisieView(APIView):
         return Response({
             'classe': classe.pk, 'ec': {'id': ec.pk, 'code': ec.code, 'libelle': ec.libelle, 'credits': ec.credits},
             'archivee': classe.annee.statut == 'archivee',
+            'deliberee': ResultatSemestre.objects.filter(inscription__classe=classe, semestre=ec.ue.semestre).exists(),
             'lignes': [{
                 'note_id': n.pk, 'etudiant': n.inscription.etudiant_id, 'matricule': n.inscription.etudiant.matricule,
                 'nom_complet': n.inscription.etudiant.personne.nom_complet,
@@ -82,9 +88,12 @@ class SaisieView(APIView):
         if not isinstance(lignes, list) or not lignes:
             raise ValidationError({'notes': 'Aucune note à enregistrer.'})
         ids = [l.get('note_id') for l in lignes if isinstance(l, dict)]
-        qs = Note.objects.select_related('inscription__annee', 'inscription__classe__parcours', 'ec')
+        qs = Note.objects.select_related('inscription__annee', 'inscription__classe__parcours', 'ec__ue')
         notes = {n.pk: n for n in restreindre_par_faculte(qs, request.user, prefixe='inscription__classe__')
                  .filter(pk__in=[i for i in ids if isinstance(i, int)])}
+        # Un semestre délibéré est figé : ses notes ne changent qu'après réouverture de la délibération.
+        deliberes = set(ResultatSemestre.objects.filter(inscription__in={n.inscription_id for n in notes.values()})
+                        .values_list('inscription_id', 'semestre'))
         enregistrees, erreurs = 0, {}
         for ligne in lignes:
             if not isinstance(ligne, dict):
@@ -96,6 +105,10 @@ class SaisieView(APIView):
                 continue
             if note.inscription.annee.statut == 'archivee':
                 erreurs[cle] = {'detail': "L'année est archivée : la note ne peut plus changer."}
+                continue
+            if (note.inscription_id, note.ec.ue.semestre) in deliberes:
+                erreurs[cle] = {'detail': f'Le {note.ec.ue.semestre} est déjà délibéré : rouvrez la délibération '
+                                          f'pour modifier cette note.'}
                 continue
             probleme = _appliquer(note, ligne)
             if probleme:
@@ -153,9 +166,12 @@ class NotesEtudiantView(APIView):
 
     def get(self, request, pk):
         etudiant = get_object_or_404(etudiants_du_perimetre(request.user), pk=pk)
-        inscriptions = etudiant.inscriptions.select_related('classe__parcours', 'annee', 'etudiant__personne')
+        inscriptions = inscriptions_visibles(etudiant, request.user)
         annee = entier(request, 'annee')
-        inscription = (inscriptions.filter(annee_id=annee) if annee is not None else inscriptions).first()
+        if annee is not None:
+            inscription = get_object_or_404(inscriptions, annee_id=annee)
+        else:
+            inscription = inscriptions.first()
         if inscription is None:
             return Response({'inscription': None, 'semestres': []})
         resultats = {r.semestre: r for r in inscription.resultats.all()}
@@ -197,6 +213,17 @@ class DeliberationView(APIView):
         lignes = deliberation(classe, semestre, enregistrer=True, par=request.user)
         journaliser(request, 'scolarite', 'deliberation', f'{classe} — {semestre} ({len(lignes)} étudiant(s))')
         return Response(_deliberation_json(classe, semestre, prog, lignes))
+
+
+    def delete(self, request):
+        """Rouvre la délibération : les résultats enregistrés sont retirés et les notes redeviennent modifiables."""
+        classe = classe_demandee(request)
+        semestre = request.query_params.get('semestre', '')
+        prog = programme_ou_400(classe, semestre)
+        refuser_si_archivee(classe.annee)
+        nombre, _ = ResultatSemestre.objects.filter(inscription__classe=classe, semestre=semestre).delete()
+        journaliser(request, 'scolarite', 'reouverture_deliberation', f'{classe} — {semestre} ({nombre} résultat(s))')
+        return Response(_deliberation_json(classe, semestre, prog, deliberation(classe, semestre)))
 
 
 class DeliberationExcelView(APIView):

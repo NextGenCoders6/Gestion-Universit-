@@ -1,6 +1,7 @@
 """API du secrétariat : étudiants, inscriptions, statuts."""
 from django.db import transaction
 from django.db.models import Prefetch, Q
+from django.http import Http404
 from rest_framework import mixins, status, viewsets
 from rest_framework.decorators import action
 from rest_framework.exceptions import ValidationError
@@ -19,6 +20,13 @@ from scolarite.serializers import (
 )
 
 STATUT_INSCRIPTION = {'abandonne': 'abandonnee', 'diplome': 'terminee'}
+
+
+def inscriptions_visibles(etudiant, user):
+    """Inscriptions de l'étudiant dans le périmètre de l'utilisateur (la plus récente d'abord)."""
+    qs = etudiant.inscriptions.select_related('classe__parcours', 'classe__portail', 'classe__filiere', 'annee',
+                                              'etudiant__personne')
+    return restreindre_par_faculte(qs, user, prefixe='classe__').order_by('-annee__date_debut')
 
 
 def etudiants_du_perimetre(user):
@@ -54,7 +62,10 @@ class EtudiantViewSet(mixins.ListModelMixin, mixins.RetrieveModelMixin, mixins.C
             qs = qs.filter(q_classe_de_faculte(faculte, 'inscriptions__classe__'))
         if params.get('statut'):
             qs = qs.filter(statut=params['statut'])
-        inscriptions = Inscription.objects.select_related('classe', 'annee', 'classe__parcours', 'etudiant__personne')
+        # Seules les inscriptions du périmètre sont montrées (un étudiant transféré garde l'autre faculté hors de vue).
+        inscriptions = restreindre_par_faculte(
+            Inscription.objects.select_related('classe', 'annee', 'classe__parcours', 'etudiant__personne'),
+            self.request.user, prefixe='classe__').order_by('-annee__date_debut')
         return qs.distinct().prefetch_related(Prefetch('inscriptions', queryset=inscriptions))
 
     def create(self, request, *args, **kwargs):
@@ -70,6 +81,10 @@ class EtudiantViewSet(mixins.ListModelMixin, mixins.RetrieveModelMixin, mixins.C
     @transaction.atomic
     def statut(self, request, pk=None):
         etudiant = self.get_object()
+        # Le statut suit l'inscription la plus récente : elle doit être dans le périmètre.
+        derniere = Inscription.objects.filter(etudiant=etudiant).order_by('-annee__date_debut').first()
+        if derniere is not None and not inscriptions_visibles(etudiant, request.user).filter(pk=derniere.pk).exists():
+            raise Http404
         serializer = StatutSerializer(data=request.data)
         serializer.is_valid(raise_exception=True)
         etudiant.statut = serializer.validated_data['statut']

@@ -21,6 +21,7 @@ export const enregistrerSaisie = (notes) => apiClient.post('/scolarite/saisie/',
 
 export const deliberation = (params) => apiClient.get('/scolarite/deliberation/', { params }).then(donnees);
 export const enregistrerDeliberation = (d) => apiClient.post('/scolarite/deliberation/', d).then(donnees);
+export const rouvrirDeliberation = (params) => apiClient.delete('/scolarite/deliberation/', { params }).then(donnees);
 
 export const promotion = (params) => apiClient.get('/scolarite/promotion/', { params }).then(donnees);
 export const appliquerPromotion = (d) => apiClient.post('/scolarite/promotion/', d).then(donnees);

@@ -37,8 +37,9 @@ test("le secrétariat inscrit un étudiant et télécharge son attestation", asy
 test('la faculté saisit des notes (cellule invalide signalée) puis délibère', async ({ page }) => {
   await connecter(page, 'scolarite_faculte');
   await page.goto('/scolarite/saisie');
-  await page.getByLabel('Classe').selectOption({ label: 'L1 MIP — 2026-2027' });
-  await page.getByLabel('Élément constitutif').selectOption({ label: 'S1 · ALGO1 — Algorithmique 1' });
+  // La L1 MIP est déjà délibérée par le jeu de démonstration (notes figées) : on saisit en L1 BCG.
+  await page.getByLabel('Classe').selectOption({ label: 'L1 BCG — 2026-2027' });
+  await page.getByLabel('Élément constitutif').selectOption({ label: 'S1 · INFOBCG — Initiation à l’algorithmique' });
   const devoirs = page.getByRole('textbox', { name: /^Devoir — / });
   await expect(devoirs.first()).toBeVisible();
   await devoirs.nth(0).fill('25');
@@ -49,11 +50,12 @@ test('la faculté saisit des notes (cellule invalide signalée) puis délibère'
   await expect(page.getByText('1 note(s) enregistrée(s)').first()).toBeVisible();
 
   await page.getByRole('link', { name: 'Délibérations' }).click();
-  await page.getByLabel('Classe').selectOption({ label: 'L1 MIP — 2026-2027' });
+  await page.getByLabel('Classe').selectOption({ label: 'L1 BCG — 2026-2027' });
   await page.getByLabel('Semestre').selectOption('S1');
   await page.getByRole('button', { name: /Enregistrer la délibération/ }).click();
   await page.getByRole('alertdialog').getByRole('button', { name: 'Enregistrer' }).click();
   await expect(page.getByText('Délibération enregistrée').first()).toBeVisible();
+  await expect(page.getByRole('button', { name: 'Rouvrir la délibération' })).toBeVisible();
 });
 
 test("l'étudiant voit la décision de son semestre", async ({ page }) => {

@@ -49,4 +49,11 @@ describe('Scolarité — saisie des notes', () => {
     expect(beta.getByRole('textbox', { name: 'Devoir — BETA Paul' })).toHaveValue('21');
     expect(beta.getByRole('textbox', { name: 'Devoir — BETA Paul' })).toHaveAttribute('aria-invalid', 'true');
   });
+
+  it('semestre délibéré : grille en lecture seule', async () => {
+    api.grilleSaisie.mockResolvedValue({ ...GRILLE, deliberee: true });
+    rendre();
+    expect(await screen.findByText(/déjà délibéré/)).toBeInTheDocument();
+    expect(screen.getByRole('textbox', { name: 'Devoir — ALPHA Grâce' })).toBeDisabled();
+  });
 });

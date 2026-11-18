@@ -11,15 +11,14 @@ from scolarite.documents import attestation_pdf, matrice_pdf, releve_pdf
 from scolarite.models import DocumentEmis
 from scolarite.permissions import DroitScolarite, Faculte
 from scolarite.views_faculte import classe_demandee, programme_ou_400
-from scolarite.views_secretariat import etudiants_du_perimetre
+from scolarite.views_secretariat import etudiants_du_perimetre, inscriptions_visibles
 
 
 def _inscription(request, pk):
     etudiant = get_object_or_404(etudiants_du_perimetre(request.user), pk=pk)
-    inscriptions = etudiant.inscriptions.select_related('classe__parcours', 'classe__portail', 'classe__filiere',
-                                                        'annee', 'etudiant__personne')
+    inscriptions = inscriptions_visibles(etudiant, request.user)
     annee = entier(request, 'annee')
-    inscription = (inscriptions.filter(annee_id=annee) if annee is not None else inscriptions).first()
+    inscription = get_object_or_404(inscriptions, annee_id=annee) if annee is not None else inscriptions.first()
     if inscription is None:
         raise ValidationError({'detail': "L'étudiant n'a pas d'inscription pour cette année."})
     return inscription

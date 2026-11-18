@@ -34,6 +34,16 @@ export default function Deliberation() {
     onError: (e) => toast({ title: 'Enregistrement impossible', description: erreursServeur(e).global, variant: 'destructive' }),
   });
 
+  const rouvrir = useMutation({
+    mutationFn: () => api.rouvrirDeliberation(params),
+    onSuccess: (r) => {
+      client.setQueryData(['scolarite', 'deliberation', classe, semestre], r);
+      client.invalidateQueries({ queryKey: ['scolarite', 'saisie'] });
+      toast({ title: 'Délibération rouverte', description: 'Les notes du semestre sont de nouveau modifiables.' });
+    },
+    onError: (e) => toast({ title: 'Réouverture impossible', description: erreursServeur(e).global, variant: 'destructive' }),
+  });
+
   const telecharger = async (chemin, nom) => {
     try { await api.telecharger(chemin, params, nom); } catch (e) {
       toast({ title: 'Téléchargement impossible', description: await api.messageErreurBlob(e), variant: 'destructive' });
@@ -61,9 +71,16 @@ export default function Deliberation() {
             <Button variant="outline" onClick={() => telecharger('/scolarite/matrice-a3.pdf', `pv-${semestre}.pdf`)}>
               <Printer /> Procès-verbal A3
             </Button>
-            <Button onClick={valider} disabled={enregistrer.isPending || d.archivee || !d.lignes.length}>
-              <CheckCircle2 /> Enregistrer la délibération
-            </Button>
+            {d.deliberee ? (
+              <Button variant="outline" disabled={rouvrir.isPending || d.archivee} onClick={async () => {
+                if (await confirmer({ titre: 'Rouvrir la délibération ?', destructif: true, libelleConfirmer: 'Rouvrir',
+                  description: 'Les résultats enregistrés sont retirés (relevés et espace étudiant) jusqu’à la prochaine délibération.' })) rouvrir.mutate();
+              }}>Rouvrir la délibération</Button>
+            ) : (
+              <Button onClick={valider} disabled={enregistrer.isPending || d.archivee || !d.lignes.length}>
+                <CheckCircle2 /> Enregistrer la délibération
+              </Button>
+            )}
           </>
         )}
       </PageHeader>

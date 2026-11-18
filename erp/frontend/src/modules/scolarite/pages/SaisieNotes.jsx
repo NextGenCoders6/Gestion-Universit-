@@ -68,7 +68,7 @@ export default function SaisieNotes() {
 
   const nbModifies = Object.keys(brouillon).length;
   const lignes = grille.data?.lignes ?? [];
-  const lectureSeule = Boolean(grille.data?.archivee);
+  const lectureSeule = Boolean(grille.data?.archivee || grille.data?.deliberee);
 
   return (
     <div className="space-y-4">
@@ -84,7 +84,10 @@ export default function SaisieNotes() {
           options={(classeChoisie?.ecs ?? []).map((e) => ({ valeur: String(e.id), libelle: `${e.semestre} · ${e.code} — ${e.libelle}` }))}
           onChange={(v) => changerSelection({ ec: v })} />
       </div>
-      {lectureSeule && <p className="text-sm text-muted-foreground">Année archivée : les notes ne peuvent plus changer.</p>}
+      {grille.data?.archivee && <p className="text-sm text-muted-foreground">Année archivée : les notes ne peuvent plus changer.</p>}
+      {grille.data?.deliberee && !grille.data?.archivee && (
+        <p className="text-sm text-muted-foreground">Ce semestre est déjà délibéré : rouvrez la délibération pour modifier les notes.</p>
+      )}
       {grille.isLoading && <p className="text-sm text-muted-foreground">Chargement…</p>}
       {grille.isError && <p className="text-sm text-destructive">{erreursServeur(grille.error).global}</p>}
       {grille.data && (
