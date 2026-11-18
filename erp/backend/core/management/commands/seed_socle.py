@@ -121,7 +121,7 @@ class Command(BaseCommand):
             for code, lib, credits, _dep in ecs:
                 ElementConstitutif.objects.get_or_create(
                     code=code, defaults={'ue': ue, 'libelle': lib, 'credits': credits, 'departement': info,
-                                         'heures_cm': 20, 'heures_td': 15, 'heures_tp': 10}
+                                         'heures_cm': credits * 6, 'heures_td': credits * 4, 'heures_tp': credits * 2}
                 )
         return enseignants
 
