@@ -4,8 +4,10 @@ import { fetchMoi } from '@/api/auth';
 import useAuthStore from '@/store/authStore';
 
 /**
- * Exige une session. Au montage, relit le profil (/api/core/moi/) pour que
- * les droits retirés ou ajoutés depuis la connexion prennent effet.
+ * Exige une session. À chaque changement de page, relit le profil
+ * (/api/core/moi/) : les droits retirés ou ajoutés depuis la connexion prennent
+ * effet, et un compte suspendu entre-temps est renvoyé au login (le client API
+ * traite la réponse 403 « profil_suspendu »).
  */
 export default function RequireAuth() {
   const isAuthenticated = useAuthStore((state) => state.isAuthenticated);
@@ -19,7 +21,7 @@ export default function RequireAuth() {
         // Erreur réseau : on garde le profil connu ; un 401/403 de session est
         // déjà traité par le client API (déconnexion).
       });
-  }, [isAuthenticated]);
+  }, [isAuthenticated, location.pathname]);
 
   if (!isAuthenticated) {
     return <Navigate to="/login" replace state={{ from: location }} />;

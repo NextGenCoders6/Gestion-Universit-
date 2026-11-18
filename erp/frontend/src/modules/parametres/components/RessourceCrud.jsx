@@ -27,23 +27,7 @@ import { useToast } from '@/hooks/use-toast';
 import { erreursServeur } from '@/lib/erreurs';
 import * as api from '../api';
 import Champ from './Champ';
-
-function valeursInitiales(champs, ligne) {
-  return Object.fromEntries(champs.map((c) => {
-    const v = ligne ? ligne[c.nom] : c.defaut;
-    if (c.type === 'checkbox') return [c.nom, Boolean(v)];
-    return [c.nom, v === null || v === undefined ? '' : String(v)];
-  }));
-}
-
-function versApi(champs, valeurs) {
-  return Object.fromEntries(champs.map((c) => {
-    const v = valeurs[c.nom];
-    if (c.type === 'checkbox') return [c.nom, Boolean(v)];
-    if (c.source || c.type === 'number') return [c.nom, v === '' || v === undefined ? null : Number(v)];
-    return [c.nom, v ?? ''];
-  }));
-}
+import { valeursInitiales, versApi } from './formulaire';
 
 function useListe(ressource, params) {
   return useQuery({ queryKey: ['parametres', ressource, params ?? {}], queryFn: () => api.lister(ressource, params) });

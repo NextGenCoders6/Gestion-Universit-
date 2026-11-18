@@ -1,9 +1,11 @@
 import { render, screen } from '@testing-library/react';
-import { MemoryRouter, Route, Routes, useLocation } from 'react-router-dom';
+import userEvent from '@testing-library/user-event';
+import { Link, MemoryRouter, Route, Routes, useLocation } from 'react-router-dom';
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 import useAuthStore from '@/store/authStore';
 import RequireAuth from './RequireAuth';
 import RequireModule from './RequireModule';
+import { fetchMoi } from '@/api/auth';
 
 vi.mock('@/api/auth', () => ({ fetchMoi: vi.fn(() => new Promise(() => {})) }));
 
@@ -57,5 +59,24 @@ describe('gardes de route', () => {
     connecter([{ code: 'parametres', niveaux: ['responsable'] }]);
     arbre('/parametres');
     expect(screen.getByText('Écran Paramètres')).toBeInTheDocument();
+  });
+
+  it('RequireAuth relit le profil à chaque changement de page', async () => {
+    fetchMoi.mockClear();
+    connecter([{ code: 'parametres', niveaux: ['responsable'] }]);
+    render(
+      <MemoryRouter initialEntries={['/a']}>
+        <Routes>
+          <Route element={<RequireAuth />}>
+            <Route path="/a" element={<Link to="/b">aller</Link>} />
+            <Route path="/b" element={<p>page b</p>} />
+          </Route>
+        </Routes>
+      </MemoryRouter>,
+    );
+    expect(fetchMoi).toHaveBeenCalledTimes(1);
+    await userEvent.setup().click(screen.getByText('aller'));
+    expect(await screen.findByText('page b')).toBeInTheDocument();
+    expect(fetchMoi).toHaveBeenCalledTimes(2);
   });
 });

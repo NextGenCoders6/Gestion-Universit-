@@ -56,3 +56,19 @@ Mot de passe commun : `Uccb!2026demo` — valeur de démonstration, à changer h
 Un module = des niveaux ; un niveau = un groupe Django `<module>_<niveau>`
 (voir `core/droits.py`). Les rôles enseignant, chef de département, étudiant
 et employé se déduisent des fiches personnes.
+
+## Interface (React)
+
+Développement : Django sur le port 8000 et Vite sur 5173 (relais de `/api`).
+
+```bash
+cd erp/frontend
+npm install
+npm run dev          # http://localhost:5173
+```
+
+Production : `npm run build` écrit l'interface dans `erp/backend/frontend_dist`,
+que Django sert pour toute URL hors `/api/`, `/admin/`, `/media/`, `/static/`.
+
+Tests de l'interface : `npm test` (Vitest) et `npx playwright test` (bout en bout ;
+démarre ses propres serveurs sur les ports 8011 et 3011 avec une base jetable).
