@@ -22,6 +22,8 @@ services:
       interval: 5s
       timeout: 5s
       retries: 30
+      # Première initialisation de MySQL lente sur une petite machine : on attend sans compter d'échecs.
+      start_period: 120s
 
   web:
     build:
