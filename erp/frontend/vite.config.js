@@ -6,6 +6,8 @@ import { fileURLToPath, URL } from 'node:url';
 // En production, `npm run build` écrit dans erp/backend/frontend_dist, servi par Django.
 export default defineConfig({
   plugins: [react()],
+  // Vitest transforme le JSX avec esbuild : runtime automatique, comme le build.
+  esbuild: { jsx: 'automatic' },
   resolve: {
     alias: { '@': fileURLToPath(new URL('./src', import.meta.url)) },
   },

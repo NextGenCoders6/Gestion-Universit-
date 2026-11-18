@@ -1,0 +1,28 @@
+import { useEffect } from 'react';
+import { Navigate, Outlet, useLocation } from 'react-router-dom';
+import { fetchMoi } from '@/api/auth';
+import useAuthStore from '@/store/authStore';
+
+/**
+ * Exige une session. Au montage, relit le profil (/api/core/moi/) pour que
+ * les droits retirés ou ajoutés depuis la connexion prennent effet.
+ */
+export default function RequireAuth() {
+  const isAuthenticated = useAuthStore((state) => state.isAuthenticated);
+  const location = useLocation();
+
+  useEffect(() => {
+    if (!isAuthenticated) return;
+    fetchMoi()
+      .then((moi) => useAuthStore.getState().setUser(moi))
+      .catch(() => {
+        // Erreur réseau : on garde le profil connu ; un 401/403 de session est
+        // déjà traité par le client API (déconnexion).
+      });
+  }, [isAuthenticated]);
+
+  if (!isAuthenticated) {
+    return <Navigate to="/login" replace state={{ from: location }} />;
+  }
+  return <Outlet />;
+}
