@@ -103,6 +103,40 @@ CORS_ALLOWED_ORIGINS = config(
     'CORS_ALLOWED_ORIGINS', default='http://localhost:5173,http://127.0.0.1:5173', cast=Csv()
 )
 
+REST_FRAMEWORK = {
+    'DEFAULT_AUTHENTICATION_CLASSES': (
+        'rest_framework_simplejwt.authentication.JWTAuthentication',
+    ),
+    'DEFAULT_PERMISSION_CLASSES': (
+        'rest_framework.permissions.IsAuthenticated',
+        'core.permissions.CompteActif',
+    ),
+    'DEFAULT_PAGINATION_CLASS': 'core.pagination.PaginationStandard',
+    'PAGE_SIZE': 20,
+    'EXCEPTION_HANDLER': 'core.exceptions.exception_handler',
+    'DATE_FORMAT': '%Y-%m-%d',
+    'DATETIME_FORMAT': '%Y-%m-%dT%H:%M:%S',
+    'TIME_FORMAT': '%H:%M',
+    'DEFAULT_THROTTLE_CLASSES': [
+        'rest_framework.throttling.AnonRateThrottle',
+        'rest_framework.throttling.UserRateThrottle',
+    ],
+    'DEFAULT_THROTTLE_RATES': {
+        'anon': '120/min',
+        'user': '1000/min',
+        'login': '30/min',
+        'login_ip': '60/min',
+    },
+}
+
+SIMPLE_JWT = {
+    'ACCESS_TOKEN_LIFETIME': timedelta(hours=2),
+    'REFRESH_TOKEN_LIFETIME': timedelta(days=7),
+    'ROTATE_REFRESH_TOKENS': True,
+    'BLACKLIST_AFTER_ROTATION': True,
+    'UPDATE_LAST_LOGIN': True,
+}
+
 # Tests : hachage rapide des mots de passe (jamais utilisé hors des tests).
 import sys  # noqa: E402
 
