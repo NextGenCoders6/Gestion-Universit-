@@ -25,6 +25,7 @@ export const REGISTRE = [
       { chemin: 'saisie', libelle: 'Saisie des notes', icone: Pencil, niveaux: ['faculte'] },
       { chemin: 'deliberation', libelle: 'Délibérations', icone: FileSpreadsheet, niveaux: ['faculte'] },
       { chemin: 'promotion', libelle: 'Promotion et orientation', icone: ArrowRightCircle, niveaux: ['faculte'] },
+      { chemin: 'vacations', libelle: 'Vacations', icone: Clock, niveaux: ['faculte'] },
     ],
   },
   {

@@ -47,3 +47,9 @@ export async function messageErreurBlob(e) {
   }
   return data?.detail ?? 'Téléchargement impossible.';
 }
+
+/** Vacations des enseignants de la faculté (API RH : la faculté confirme ou retire). */
+export const listerVacations = (params = {}) => apiClient.get('/rh/vacations/', { params }).then(donnees);
+export const historiqueVacations = (params = {}) => apiClient.get('/rh/vacations/historique/', { params }).then(donnees);
+export const confirmerVacation = (affectation, d) => apiClient.post(`/rh/vacations/${affectation}/confirmer/`, d).then(donnees);
+export const retirerVacation = (affectation, motif) => apiClient.post(`/rh/vacations/${affectation}/retirer/`, { motif }).then(donnees);
