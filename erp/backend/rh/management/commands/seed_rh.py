@@ -81,22 +81,32 @@ class Command(BaseCommand):
         if gardien is not None:
             self._contrat(gardien, 'permanent', date(2023, 9, 1), None, '120000')
 
-    def _ajuster(self, nom, code_ec):
-        """Ramène les heures prévues aux heures déjà faites : l'affectation devient terminée."""
-        a = (AffectationEC.objects.select_related('enseignant__personne', 'ec', 'classe')
-             .filter(enseignant__personne__nom=nom, ec__code=code_ec).first())
-        if a is None:
-            return None
-        effectuees, _ = vacations.Heures([a]).de(a)
-        if effectuees > 0 and float(a.heures_prevues) != effectuees and not hasattr(a, 'vacation'):
-            a.heures_prevues = round(effectuees)
-            a.save()
+    def _affectation_terminee(self, code, libelle, nom, samedi):
+        """EC de L2 INFO propre à la démo RH, avec deux séances passées qui couvrent ses heures prévues.
+
+        Le seed ne touche pas aux affectations de seed_edt : les scénarios de l'EDT s'en servent.
+        """
+        from datetime import time
+        from core.models import Classe, Departement, ElementConstitutif, UniteEnseignement
+        from edt.models import Seance
+        ue = UniteEnseignement.objects.get(code='UE-INFO-S3-1')
+        ec, _ = ElementConstitutif.objects.get_or_create(code=code, defaults={
+            'ue': ue, 'libelle': libelle, 'credits': 2, 'departement': Departement.objects.get(libelle='Informatique'),
+            'heures_cm': 12, 'heures_td': 8, 'heures_tp': 4})
+        classe = Classe.objects.get(annee__libelle='2026-2027', parcours__niveau=2, filiere__code='INFO')
+        enseignant = Enseignant.objects.get(personne__nom=nom)
+        a, _ = AffectationEC.objects.get_or_create(ec=ec, classe=classe, enseignant=enseignant, type_seance=None,
+                                                   defaults={'heures_prevues': 4})
+        for debut, fin in ((time(9, 0), time(11, 0)), (time(11, 15), time(13, 15))):
+            if not Seance.objects.filter(ec=ec, classe=classe, date_seance=samedi, heure_debut=debut).exists():
+                Seance.objects.create(ec=ec, classe=classe, enseignant=enseignant, date_seance=samedi, heure_debut=debut,
+                                      heure_fin=fin, type_seance='CM', statut='Confirmée')
         return a
 
     def _vacations(self):
-        self._ajuster('Mbemba', 'ARCHI1')                     # à confirmer par la faculté
-        a = self._ajuster('Nkounkou', 'PROG1')                # confirmée
-        if a is not None and not vacations.Vacation.objects.filter(affectation=a).exists():
+        self._affectation_terminee('SYSEXP', "Systèmes d'exploitation", 'Nkounkou', date(2026, 10, 31))   # à confirmer
+        a = self._affectation_terminee('WEB1', 'Développement web', 'Mbemba', date(2026, 10, 24))          # confirmée
+        if not vacations.Vacation.objects.filter(affectation=a).exists():
             e = vacations.etat(a)
             if e['terminee'] and e['confirmable']:
                 vacations.confirmer(a, par=User.objects.filter(username='scolarite_faculte').first())
