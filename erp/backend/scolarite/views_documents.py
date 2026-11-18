@@ -25,6 +25,12 @@ def _inscription(request, pk):
     return inscription
 
 
+def _avec_verification(reponse, url):
+    """L'adresse encodée dans le QR code, pour qui veut l'archiver sans relire le PDF."""
+    reponse['X-Verification-Url'] = url
+    return reponse
+
+
 class AttestationView(APIView):
     permission_classes = [DroitScolarite('secretariat')]
 
@@ -32,9 +38,9 @@ class AttestationView(APIView):
         inscription = _inscription(request, pk)
         if inscription.statut == 'abandonnee':
             raise ValidationError({'detail': "L'étudiant a abandonné : aucune attestation de fréquentation."})
-        contenu = attestation_pdf(inscription, request.user)
+        contenu, url = attestation_pdf(inscription, request.user)
         journaliser(request, 'scolarite', 'attestation', f'{inscription}')
-        return reponse_pdf(contenu, f'attestation-{inscription.etudiant.matricule}.pdf')
+        return _avec_verification(reponse_pdf(contenu, f'attestation-{inscription.etudiant.matricule}.pdf'), url)
 
 
 class ReleveView(APIView):
@@ -47,9 +53,9 @@ class ReleveView(APIView):
         resultat = inscription.resultats.filter(semestre=semestre).first()
         if resultat is None:
             raise ValidationError({'detail': f"Le semestre {semestre} n'est pas encore délibéré pour cet étudiant."})
-        contenu = releve_pdf(inscription, semestre, resultat, request.user)
+        contenu, url = releve_pdf(inscription, semestre, resultat, request.user)
         journaliser(request, 'scolarite', 'releve', f'{inscription} — {semestre}')
-        return reponse_pdf(contenu, f'releve-{inscription.etudiant.matricule}-{semestre}.pdf')
+        return _avec_verification(reponse_pdf(contenu, f'releve-{inscription.etudiant.matricule}-{semestre}.pdf'), url)
 
 
 class MatriceA3View(APIView):

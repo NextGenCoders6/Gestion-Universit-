@@ -28,6 +28,7 @@ class DocumentsTests(Base):
         self.assertTrue(r.content.startswith(b'%PDF'))
         doc = DocumentEmis.objects.get()
         self.assertEqual((doc.type, doc.inscription, len(doc.jeton)), ('attestation', self.i, 32))
+        self.assertEqual(r['X-Verification-Url'], f'https://erp.uccb.test/verifier/{doc.jeton}')
 
     def test_jetons_uniques(self):
         self.secretariat.get(f'{self.url}/attestation.pdf')

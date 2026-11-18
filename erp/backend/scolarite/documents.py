@@ -42,17 +42,21 @@ def contexte_attestation(inscription, par):
 
 
 def attestation_pdf(inscription, par):
-    return rendre_pdf('scolarite/attestation.html', contexte_attestation(inscription, par))
+    """(PDF, URL de vérification)."""
+    contexte = contexte_attestation(inscription, par)
+    return rendre_pdf('scolarite/attestation.html', contexte), contexte['url_verification']
 
 
 def releve_pdf(inscription, semestre, resultat, par):
-    """Relevé officiel d'un semestre délibéré : moyennes d'UE et résultat enregistré."""
+    """Relevé officiel d'un semestre délibéré : (PDF, URL de vérification)."""
     document = DocumentEmis.objects.create(type='releve', inscription=inscription, semestre=semestre,
                                            decision=resultat.decision, emis_par=par)
     ligne = ligne_etudiant(inscription, semestre)
-    return rendre_pdf('scolarite/releve.html', {
-        **_commun(inscription), **_qr(document), 'semestre': semestre, 'ligne': ligne, 'resultat': resultat,
+    qr = _qr(document)
+    contenu = rendre_pdf('scolarite/releve.html', {
+        **_commun(inscription), **qr, 'semestre': semestre, 'ligne': ligne, 'resultat': resultat,
     })
+    return contenu, qr['url_verification']
 
 
 def matrice_pdf(classe, semestre):
