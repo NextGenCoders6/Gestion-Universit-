@@ -12,5 +12,7 @@ urlpatterns = [
     path('tableau-de-bord/', views.TableauDeBordView.as_view(), name='rh_tableau_de_bord'),
     path('vacations/', views.VacationsView.as_view(), name='rh_vacations'),
     path('vacations/historique/', views.HistoriqueVacationsView.as_view(), name='rh_vacations_historique'),
+    path('vacations/<int:pk>/confirmer/', views.ConfirmerVacationView.as_view(), name='rh_vacation_confirmer'),
+    path('vacations/<int:pk>/retirer/', views.RetirerVacationView.as_view(), name='rh_vacation_retirer'),
     path('', include(router.urls)),
 ]

@@ -17,7 +17,7 @@ from core.models import AnneeAcademique, Departement, Employe, Enseignant
 from rh import vacations as service
 from rh.contrats import contrats_a_echeance, q_en_cours, terminer
 from rh.models import Contrat, HistoriqueVacation
-from rh.permissions import LectureRH, LectureVacations
+from rh.permissions import ConfirmationVacations, LectureRH, LectureVacations
 from rh.serializers import ContratSerializer, EmployeRHSerializer, EnseignantRHSerializer
 
 
@@ -259,3 +259,43 @@ class _Requete:
     def __init__(self, request, etat):
         self.user = request.user
         self.query_params = {**request.query_params.dict(), 'etat': etat}
+
+
+class ActionVacationView(APIView):
+    """Confirmation (ou retrait) d'une vacation par la faculté de l'EC."""
+
+    permission_classes = [ConfirmationVacations]
+
+    def affectation(self, request, pk):
+        from edt.models import AffectationEC
+        qs = AffectationEC.objects.select_related('ec__departement__faculte', 'classe', 'enseignant__personne')
+        faculte = faculte_rattachee(request.user)
+        if faculte is not None:
+            qs = qs.filter(ec__departement__faculte=faculte)
+        return get_object_or_404(qs, pk=pk)
+
+    def reponse(self, a):
+        a = type(a).objects.select_related('ec', 'classe', 'enseignant__personne', 'vacation').get(pk=a.pk)
+        return Response(ligne_vacation(a, service.etat(a)))
+
+
+class ConfirmerVacationView(ActionVacationView):
+    def post(self, request, pk):
+        a = self.affectation(request, pk)
+        v = service.confirmer(a, heures_retenues=request.data.get('heures_retenues'),
+                              motif=request.data.get('motif', ''), par=request.user)
+        journaliser(request, 'rh', 'confirmation_vacation',
+                    f'{a.enseignant.personne} — {a.ec.code} {a.classe} : {v.heures_retenues} h, {v.montant}')
+        return self.reponse(a)
+
+
+class RetirerVacationView(ActionVacationView):
+    def post(self, request, pk):
+        a = self.affectation(request, pk)
+        vacation = service._vacation_de(a)
+        if vacation is None:
+            raise ValidationError({'detail': "Cette vacation n'est pas confirmée."})
+        motif = request.data.get('motif', '')
+        service.retirer(vacation, motif=motif, par=request.user)
+        journaliser(request, 'rh', 'retrait_vacation', f'{a.enseignant.personne} — {a.ec.code} {a.classe} : {motif}')
+        return self.reponse(a)
