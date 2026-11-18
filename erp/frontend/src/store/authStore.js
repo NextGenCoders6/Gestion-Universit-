@@ -13,12 +13,16 @@ const useAuthStore = create(
       refreshToken: null,
       user: null,
       isAuthenticated: false,
+      // Vrai après « Déconnexion » : le login ne renvoie pas le compte suivant
+      // vers la dernière page du compte précédent.
+      deconnexionVolontaire: false,
 
       setAuth: ({ accessToken, refreshToken, user }) => set({
         accessToken,
         refreshToken,
         user,
         isAuthenticated: true,
+        deconnexionVolontaire: false,
       }),
 
       // Le serveur fait tourner le refresh token à chaque renouvellement et
@@ -30,11 +34,12 @@ const useAuthStore = create(
 
       setUser: (user) => set({ user }),
 
-      clearAuth: () => set({
+      clearAuth: ({ volontaire = false } = {}) => set({
         accessToken: null,
         refreshToken: null,
         user: null,
         isAuthenticated: false,
+        deconnexionVolontaire: volontaire,
       }),
     }),
     {

@@ -42,6 +42,13 @@ describe('gardes de route', () => {
     expect(screen.getByText('Connexion — retour vers /rh')).toBeInTheDocument();
   });
 
+  it('après une déconnexion volontaire, le login ne renvoie pas vers la page précédente', () => {
+    connecter([]);
+    useAuthStore.getState().clearAuth({ volontaire: true });
+    arbre('/rh');
+    expect(screen.getByText(/^Connexion — retour vers\s*$/)).toBeInTheDocument();
+  });
+
   it('RequireModule sans droit affiche 403 sans changer de page', () => {
     connecter([{ code: 'rh', niveaux: ['responsable'] }]);
     arbre('/parametres');

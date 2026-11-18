@@ -65,7 +65,7 @@ export default function RessourceCrud({ config, params, enTete = true }) {
       toast({ title: edition?.id ? 'Modifications enregistrées' : 'Élément créé' });
       setEdition(null);
     },
-    onError: (error) => setErreurs(erreursServeur(error)),
+    onError: (error) => setErreurs(erreursServeur(error, champs.map((c) => c.nom))),
   });
 
   const supprimer = useMutation({

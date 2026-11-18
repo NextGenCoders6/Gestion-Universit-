@@ -28,7 +28,7 @@ export default function Etablissement() {
       setErreurs({ champs: {}, global: null });
       toast({ title: 'Paramètres enregistrés' });
     },
-    onError: (e) => setErreurs(erreursServeur(e)),
+    onError: (e) => setErreurs(erreursServeur(e, ['nom_secretaire', 'genre_secretaire', 'ville_signature'])),
   });
 
   return (

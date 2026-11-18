@@ -21,6 +21,8 @@ const LIBELLES_NIVEAUX = {
   utilisateur: 'Utilisateur', responsable: 'Responsable', secretariat: 'Secrétariat', faculte: 'Faculté',
 };
 
+const CHAMPS_UTILISATEUR = ['username', 'password', 'personne_id', 'faculte_rattachee_id', 'is_active', 'groupes'];
+
 function niveauxDepuisGroupes(modules, groupes = []) {
   return Object.fromEntries(modules.map((m) => {
     const niveau = m.niveaux.find((n) => groupes.includes(`${m.code}_${n}`));
@@ -75,7 +77,7 @@ export default function Utilisateurs() {
       toast({ title: edition?.id ? 'Utilisateur modifié' : 'Utilisateur créé' });
       setEdition(null);
     },
-    onError: (error) => setErreurs(erreursServeur(error)),
+    onError: (error) => setErreurs(erreursServeur(error, CHAMPS_UTILISATEUR)),
   });
 
   const colonnes = [

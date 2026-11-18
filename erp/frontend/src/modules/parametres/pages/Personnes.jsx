@@ -24,7 +24,10 @@ export default function Personnes() {
   const suspendre = useMutation({
     mutationFn: () => api.agir('personnes', cible.id, 'suspendre', { motif }),
     onSuccess: () => { rafraichir(); toast({ title: 'Personne suspendue' }); setCible(null); },
-    onError: (e) => setErreur(erreursServeur(e).champs.motif ?? erreursServeur(e).global),
+    onError: (e) => {
+      const { champs, global } = erreursServeur(e, ['motif']);
+      setErreur(champs.motif ?? global);
+    },
   });
 
   const reactiver = useMutation({

@@ -11,6 +11,7 @@ import useAuthStore from '@/store/authStore';
  */
 export default function RequireAuth() {
   const isAuthenticated = useAuthStore((state) => state.isAuthenticated);
+  const deconnexionVolontaire = useAuthStore((state) => state.deconnexionVolontaire);
   const location = useLocation();
 
   useEffect(() => {
@@ -24,7 +25,7 @@ export default function RequireAuth() {
   }, [isAuthenticated, location.pathname]);
 
   if (!isAuthenticated) {
-    return <Navigate to="/login" replace state={{ from: location }} />;
+    return <Navigate to="/login" replace state={deconnexionVolontaire ? undefined : { from: location }} />;
   }
   return <Outlet />;
 }

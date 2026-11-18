@@ -1,5 +1,6 @@
 import apiClient from './client';
 import useAuthStore from '@/store/authStore';
+import { queryClient } from '@/lib/queryClient';
 
 /** Connexion : renvoie { access, refresh, user } où user a la forme de /api/core/moi/. */
 export async function login(username, password) {
@@ -13,7 +14,10 @@ export async function fetchMoi() {
   return response.data;
 }
 
-/** Déconnexion : le serveur invalide le refresh token, puis la session locale est vidée. */
+/**
+ * Déconnexion : le serveur invalide le refresh token, puis la session locale et
+ * le cache des données sont vidés (poste partagé : rien ne reste du compte précédent).
+ */
 export async function logout() {
   const { refreshToken, clearAuth } = useAuthStore.getState();
   try {
@@ -21,6 +25,7 @@ export async function logout() {
   } catch {
     // Serveur injoignable : la session locale est vidée quand même.
   } finally {
-    clearAuth();
+    queryClient.clear();
+    clearAuth({ volontaire: true });
   }
 }

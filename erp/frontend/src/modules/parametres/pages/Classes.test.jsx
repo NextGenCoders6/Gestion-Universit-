@@ -53,4 +53,31 @@ describe('Paramètres — Classes', () => {
     const message = await within(dialog).findByText(/rattachée à un portail, pas à une filière/);
     expect(message.closest('[data-champ]')).toHaveAttribute('data-champ', 'filiere');
   });
+
+  it('affiche une erreur générale (doublon) au lieu de la perdre', async () => {
+    api.creer.mockRejectedValue({
+      response: { status: 400, data: { non_field_errors: ['Cette classe existe déjà pour cette année.'] } },
+    });
+    const user = userEvent.setup();
+    rendre();
+    await user.click(await screen.findByRole('button', { name: /Nouvelle classe/ }));
+    const dialog = await screen.findByRole('dialog');
+    await user.selectOptions(within(dialog).getByLabelText('Année'), '1');
+    await user.selectOptions(within(dialog).getByLabelText('Niveau'), '1');
+    await user.selectOptions(within(dialog).getByLabelText('Portail'), '1');
+    await user.click(within(dialog).getByRole('button', { name: 'Enregistrer' }));
+    expect(await within(dialog).findByRole('alert')).toHaveTextContent('Cette classe existe déjà pour cette année.');
+  });
+
+  it('affiche une clé inconnue du formulaire comme erreur générale', async () => {
+    api.creer.mockRejectedValue({ response: { status: 400, data: { annee_libelle: ['Champ inattendu.'] } } });
+    const user = userEvent.setup();
+    rendre();
+    await user.click(await screen.findByRole('button', { name: /Nouvelle classe/ }));
+    const dialog = await screen.findByRole('dialog');
+    await user.selectOptions(within(dialog).getByLabelText('Année'), '1');
+    await user.selectOptions(within(dialog).getByLabelText('Niveau'), '1');
+    await user.click(within(dialog).getByRole('button', { name: 'Enregistrer' }));
+    expect(await within(dialog).findByRole('alert')).toHaveTextContent('Champ inattendu.');
+  });
 });
