@@ -66,3 +66,39 @@ class Contrat(ModeleValide):
             autre = autres.first()
             if autre is not None:
                 raise ValidationError({'date_debut': f'Ce contrat chevauche un autre contrat de la personne ({autre}).'})
+
+
+class Vacation(models.Model):
+    """Confirmation par la faculté d'une affectation d'un vacataire : heures retenues, taux et montant figés."""
+
+    affectation = models.OneToOneField('edt.AffectationEC', on_delete=models.PROTECT, related_name='vacation')
+    contrat = models.ForeignKey(Contrat, on_delete=models.PROTECT, related_name='vacations')
+    heures_effectuees = models.DecimalField(max_digits=6, decimal_places=2)
+    heures_retenues = models.DecimalField(max_digits=6, decimal_places=2)
+    motif = models.CharField(max_length=255, blank=True)
+    taux_horaire = models.DecimalField(max_digits=10, decimal_places=2)
+    montant = models.DecimalField(max_digits=12, decimal_places=2)
+    confirmee_le = models.DateTimeField(auto_now_add=True)
+    confirmee_par = models.ForeignKey(settings.AUTH_USER_MODEL, on_delete=models.SET_NULL, null=True, blank=True,
+                                      related_name='+')
+
+    class Meta:
+        ordering = ['-confirmee_le']
+
+    def __str__(self):
+        return f'Vacation {self.affectation} — {self.heures_retenues} h × {self.taux_horaire} = {self.montant}'
+
+
+class HistoriqueVacation(models.Model):
+    ACTIONS = [('confirmation', 'Confirmation'), ('retrait', 'Retrait de la confirmation')]
+
+    affectation = models.ForeignKey('edt.AffectationEC', on_delete=models.CASCADE, related_name='historique_vacation')
+    action = models.CharField(max_length=12, choices=ACTIONS)
+    heures_retenues = models.DecimalField(max_digits=6, decimal_places=2)
+    montant = models.DecimalField(max_digits=12, decimal_places=2)
+    motif = models.CharField(max_length=255, blank=True)
+    par = models.ForeignKey(settings.AUTH_USER_MODEL, on_delete=models.SET_NULL, null=True, blank=True, related_name='+')
+    le = models.DateTimeField(default=timezone.now)
+
+    class Meta:
+        ordering = ['-le', '-pk']
