@@ -30,6 +30,7 @@ INSTALLED_APPS = [
     'scolarite',
     'rh',
     'finance',
+    'logistique',
 ]
 
 MIDDLEWARE = [
