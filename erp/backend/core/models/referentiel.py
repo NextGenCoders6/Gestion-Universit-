@@ -28,6 +28,11 @@ class ModeleValide(models.Model):
 
 # ── Calendrier ───────────────────────────────────────────────────
 
+# Contrôles ajoutés par les modules avant l'archivage d'une année
+# (ex. l'EDT refuse s'il reste des séances confirmées à venir).
+VERIFICATIONS_ARCHIVAGE = []
+
+
 class AnneeAcademique(ModeleValide):
     STATUT_CHOICES = [('active', 'Active'), ('archivee', 'Archivée')]
 
@@ -68,6 +73,9 @@ class AnneeAcademique(ModeleValide):
                 raise ValidationError({'date_fin': f'La date de fin doit être en {fin}.'})
         if self.en_cours and self.statut == 'archivee':
             raise ValidationError({'en_cours': "Une année archivée ne peut pas être l'année en cours."})
+        if self.statut == 'archivee':
+            for verification in VERIFICATIONS_ARCHIVAGE:
+                verification(self)
 
     def save(self, *args, **kwargs):
         with transaction.atomic():
@@ -380,6 +388,16 @@ class ElementConstitutif(ModeleValide):
     @property
     def semestre(self):
         return self.ue.semestre
+
+    def clean(self):
+        # Règle de l'EDT : 12 h par crédit au plus ; les heures ventilées (> 0) ne
+        # dépassent pas ce total.
+        ventile = sum(h for h in (self.heures_cm, self.heures_td, self.heures_tp) if h)
+        if self.credits and ventile > self.credits * 12:
+            raise ValidationError(
+                f'La somme des heures ventilées (CM+TD+TP = {ventile} h) dépasse le volume maximal de l’EC '
+                f'({self.credits * 12} h pour {self.credits} crédit(s)).'
+            )
 
 
 # ── Établissement ────────────────────────────────────────────────

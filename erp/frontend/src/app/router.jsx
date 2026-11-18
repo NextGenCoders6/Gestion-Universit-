@@ -9,7 +9,7 @@ import { REGISTRE } from './modules';
 import { ROUTES_MODULES } from './routesModules';
 import Introuvable from './pages/Introuvable';
 import ModuleAVenir from './pages/ModuleAVenir';
-import MonEspace from './pages/MonEspace';
+import { routesMoi } from '@/modules/moi/routes';
 
 function routeModule(module) {
   const enfants = ROUTES_MODULES[module.code];
@@ -38,7 +38,7 @@ export const router = createBrowserRouter([
     element: <RequireAuth />,
     children: [
       { path: '/', element: <Lanceur /> },
-      { path: '/moi/*', element: <MonEspace /> },
+      { path: '/moi/*', element: routesMoi() },
       ...REGISTRE.map(routeModule),
     ],
   },
