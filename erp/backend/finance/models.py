@@ -96,3 +96,53 @@ class EcheanceFrais(models.Model):
 
     def __str__(self):
         return f'{self.dossier} — {self.mois} ({self.montant}, avant le {self.date_limite})'
+
+
+MODES_PAIEMENT = [('especes', 'Espèces'), ('mobile_money', 'Mobile Money'), ('virement', 'Virement bancaire'),
+                  ('cheque', 'Chèque')]
+
+
+class Compteur(models.Model):
+    """Numérotation sans trou des opérations, par année (verrouillée à chaque attribution)."""
+
+    cle = models.CharField(max_length=30, unique=True)
+    valeur = models.PositiveIntegerField(default=0)
+
+
+class Operation(models.Model):
+    """Ligne du journal (reprise de Transaction) : jamais supprimée, corrigée par contre-écriture."""
+
+    CATEGORIES = [('frais', 'Frais de scolarité'), ('salaire', 'Salaire'), ('vacation', 'Vacation'),
+                  ('manuelle', 'Opération manuelle'), ('annulation', 'Annulation')]
+
+    numero = models.CharField(max_length=20, unique=True)
+    date = models.DateField()
+    libelle = models.CharField(max_length=255)
+    montant = models.DecimalField(max_digits=14, decimal_places=2, help_text='+ recette, − dépense')
+    categorie = models.CharField(max_length=12, choices=CATEGORIES)
+    annule = models.OneToOneField('self', on_delete=models.PROTECT, null=True, blank=True, related_name='annulation',
+                                  help_text='Opération que celle-ci annule (contre-écriture).')
+    par = models.ForeignKey('auth.User', on_delete=models.SET_NULL, null=True, blank=True, related_name='+')
+    created_at = models.DateTimeField(auto_now_add=True)
+
+    class Meta:
+        ordering = ['-date', '-numero']
+
+    def __str__(self):
+        return f'{self.numero} {self.libelle} {self.montant}'
+
+
+class PaiementEtudiant(models.Model):
+    dossier = models.ForeignKey(FraisScolarite, on_delete=models.PROTECT, related_name='paiements')
+    montant = models.DecimalField(max_digits=12, decimal_places=2)
+    mode = models.CharField(max_length=15, choices=MODES_PAIEMENT)
+    date = models.DateField()
+    reference = models.CharField(max_length=60, blank=True)
+    operation = models.OneToOneField(Operation, on_delete=models.PROTECT, related_name='paiement_etudiant')
+    annule = models.BooleanField(default=False)
+    motif_annulation = models.CharField(max_length=255, blank=True)
+    par = models.ForeignKey('auth.User', on_delete=models.SET_NULL, null=True, blank=True, related_name='+')
+    created_at = models.DateTimeField(auto_now_add=True)
+
+    class Meta:
+        ordering = ['-date', '-pk']
