@@ -44,10 +44,10 @@ test('un compte suspendu en cours de session est renvoyé au login avec le motif
   const admin = await (await browser.newContext()).newPage();
   const victime = await (await browser.newContext()).newPage();
 
-  await connecter(victime, 'finance_utilisateur');
+  await connecter(victime, 'edt_utilisateur');
   await expect(victime.getByRole('heading', { name: 'Vos modules' })).toBeVisible();
 
-  // Le compte finance_utilisateur n'a pas de fiche personne : on en lie une, puis on la suspend.
+  // Le compte edt_utilisateur (inutilisé par les autres parcours) n'a pas de fiche personne : on en lie une, puis on la suspend.
   await connecter(admin, 'parametres');
   await expect(admin.getByRole('heading', { name: 'Vos modules' })).toBeVisible();
   await admin.goto('/parametres/personnes');
@@ -60,7 +60,7 @@ test('un compte suspendu en cours de session est renvoyé au login avec le motif
   await expect(dialog).toBeHidden();
 
   await admin.goto('/parametres/utilisateurs');
-  await admin.getByRole('row', { name: /finance_utilisateur/ }).getByRole('button', { name: /Modifier/ }).click();
+  await admin.getByRole('row', { name: /edt_utilisateur/ }).getByRole('button', { name: /Modifier/ }).click();
   dialog = admin.getByRole('dialog');
   await dialog.getByLabel('Personne liée').selectOption({ label: 'IBARA Nadège' });
   await dialog.getByRole('button', { name: 'Enregistrer' }).click();
@@ -75,7 +75,7 @@ test('un compte suspendu en cours de session est renvoyé au login avec le motif
   await expect(dialog).toBeHidden();
 
   // Clic suivant de la victime : l'API refuse, retour au login avec le motif.
-  await victime.getByRole('link', { name: /Finance/ }).click();
+  await victime.getByRole('link', { name: /Emploi du temps/ }).click();
   await expect(victime).toHaveURL(/\/login$/);
   await expect(victime.getByText(/Contrôle des accès/)).toBeVisible();
 });
