@@ -5,7 +5,7 @@
 // La configuration démarre ses propres serveurs sur des ports à part
 // (Django 8011 sur une base SQLite jetable, Vite 3011), sans toucher à ceux
 // du travail quotidien (8000, 5173). La base est recréée et remplie par
-// seed_socle à chaque lancement.
+// seed_demo à chaque lancement.
 import { defineConfig, devices } from '@playwright/test';
 import { mkdtempSync } from 'node:fs';
 import { tmpdir } from 'node:os';
@@ -37,7 +37,7 @@ export default defineConfig({
   projects: [{ name: 'chromium', use: { ...devices['Desktop Chrome'] } }],
   webServer: [
     {
-      command: `${PYTHON} manage.py migrate -v0 && ${PYTHON} manage.py seed_socle --reset && ${PYTHON} manage.py seed_edt && ${PYTHON} manage.py seed_scolarite && ${PYTHON} manage.py seed_rh && ${PYTHON} manage.py seed_finance && ${PYTHON} manage.py runserver 127.0.0.1:8011 --noreload`,
+      command: `${PYTHON} manage.py migrate -v0 && ${PYTHON} manage.py seed_demo --reset && ${PYTHON} manage.py runserver 127.0.0.1:8011 --noreload`,
       cwd: BACKEND,
       env: ENV_DJANGO,
       url: 'http://127.0.0.1:8011/api/core/modules/',

@@ -22,20 +22,24 @@ Pour un essai rapide sans MySQL, mettre `DB_ENGINE=sqlite` dans `.env`.
 
 ```bash
 .venv/bin/python manage.py migrate
-.venv/bin/python manage.py seed_socle
-.venv/bin/python manage.py seed_edt      # emploi du temps de démonstration
-.venv/bin/python manage.py seed_scolarite  # étudiants, notes, délibération S1 de la L1 MIP, année 2027-2028
-.venv/bin/python manage.py seed_rh         # contrats, personnel, une vacation à confirmer et une confirmée
-.venv/bin/python manage.py seed_finance    # tarifs (1 500 000 FCFA en 10 mensualités), paiements, paie d'octobre, journal
+.venv/bin/python manage.py seed_demo       # tout l'ERP de démonstration, puis la liste des comptes
 .venv/bin/python manage.py runserver
 ```
 
-`seed_socle --reset` vide d'abord les données du socle (refusé si `DEBUG=False`).
+`seed_demo --reset` vide d'abord toutes les données (refusé si `DEBUG=False`, comme tous les seeds).
+Chaque module garde son seed, à lancer dans cet ordre : `seed_socle`, `seed_edt`, `seed_scolarite`,
+`seed_rh`, `seed_finance`, `seed_logistique`.
+
+Contenu : une année 2026-2027 active (et 2027-2028 pour la promotion), 2 facultés, des classes L1 à L3
+et une M1, ~10 enseignants permanents et vacataires, 10 employés dont 2 chauffeurs, 62 étudiants avec
+notes et une délibération, des séances, des tarifs à 1 500 000 FCFA en 10 mensualités, des paiements,
+la paie d'octobre, 3 bus, 3 trajets et des dépenses de transport.
 
 ## Tests
 
 ```bash
-DB_ENGINE=sqlite .venv/bin/python manage.py test core edt scolarite rh finance
+DB_ENGINE=sqlite .venv/bin/python manage.py test core edt scolarite rh finance logistique
+cd ../frontend && npx vitest run && npx playwright test
 ```
 
 ## Comptes de démonstration
@@ -45,21 +49,22 @@ Mot de passe commun : `Uccb!2026demo` — valeur de démonstration, à changer h
 | Identifiant | Accès |
 |---|---|
 | `admin` | superutilisateur : tous les modules |
-| `parametres` | Paramètres (responsable) |
-| `scolarite_secretariat` | Scolarité — secrétariat |
-| `scolarite_faculte` | Scolarité — faculté, rattaché à la FST |
+| `parametres` | Paramètres (référentiel, utilisateurs, tarifs) |
+| `scolarite_secretariat` | Scolarité — secrétariat (étudiants, inscriptions, attestations, relevés) |
+| `scolarite_faculte` | Scolarité — faculté, rattaché à la FST (notes, délibérations, vacations) |
 | `edt_utilisateur`, `edt_responsable` | Emploi du temps |
 | `rh_utilisateur`, `rh_responsable` | Ressources humaines |
-| `finance_utilisateur`, `finance_responsable` | Finance |
+| `finance_utilisateur` | Finance — caisse (encaissements) |
+| `finance_responsable` | Finance — paie, ajustements, annulations, transports |
 | `logistique_utilisateur`, `logistique_responsable` | Logistique |
 | `chef` | enseignant chef du département Informatique : gère l'EDT de la L2 INFO |
-| `referent` | enseignant référent des L1 MIP et BCG (après `seed_edt`) |
-| `enseignant` | enseignante (Mon espace : planning, enseignements, documents ; après `seed_edt`) |
-| `etudiant` | étudiant de L1 MIP (Mon espace : notes, planning, enseignants ; après `seed_scolarite`) |
-
-Activation d'un compte étudiant (après `seed_scolarite`) : matricule de Jonas Bakala, e-mail
-`jonas.bakala@etu.uccb.cg`, date de naissance 12/05/2006.
+| `referent` | enseignant référent des L1 MIP et BCG |
+| `enseignant` | enseignante (Mon espace : planning, enseignements, documents) |
+| `etudiant` | étudiant de L1 MIP (Mon espace : notes, planning, enseignants, frais) |
 | `employe` | gardien, sans aucun droit |
+
+Activation d'un compte étudiant : matricule de Jonas Bakala, e-mail `jonas.bakala@etu.uccb.cg`,
+date de naissance 12/05/2006.
 
 ## Droits
 
