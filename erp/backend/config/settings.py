@@ -28,6 +28,7 @@ INSTALLED_APPS = [
     'core',
     'edt',
     'scolarite',
+    'rh',
 ]
 
 MIDDLEWARE = [
