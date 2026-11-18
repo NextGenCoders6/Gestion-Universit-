@@ -1,13 +1,17 @@
 from django.urls import include, path
 from rest_framework.routers import DefaultRouter
 
-from scolarite import views_documents, views_faculte, views_secretariat
+from scolarite import views_documents, views_etudiant, views_faculte, views_secretariat
 
 router = DefaultRouter()
 router.register('etudiants', views_secretariat.EtudiantViewSet, basename='scolarite-etudiant')
 router.register('inscriptions', views_secretariat.InscriptionViewSet, basename='scolarite-inscription')
 
 urlpatterns = [
+    path('activation/', views_etudiant.ActivationView.as_view(), name='scolarite_activation'),
+    path('moi/notes/', views_etudiant.MesNotesView.as_view(), name='scolarite_moi_notes'),
+    path('moi/planning/', views_etudiant.MonPlanningEtudiantView.as_view(), name='scolarite_moi_planning'),
+    path('moi/enseignants/', views_etudiant.MesEnseignantsView.as_view(), name='scolarite_moi_enseignants'),
     path('etudiants/<int:pk>/notes/', views_faculte.NotesEtudiantView.as_view(), name='scolarite_notes_etudiant'),
     path('etudiants/<int:pk>/attestation.pdf', views_documents.AttestationView.as_view(),
          name='scolarite_attestation'),
