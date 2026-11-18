@@ -136,7 +136,8 @@ class VacationsListeTests(Base):
         self.terminee = affectation(self.m.algo, self.m.l1, self.m.ens, 2)
         seance_brute(self.m.algo, self.m.l1, self.m.ens, jour=AUJ - timedelta(days=3))
         self.en_cours = affectation(self.m.bdd, self.m.l2, self.m.ens, 10)
-        affectation(self.m.bdd, self.m.l2, self.m.ens2, 4)    # permanent ou sans contrat : pas une vacation
+        permanent(self.m.ens2.personne, debut=AUJ - timedelta(days=60))
+        affectation(self.m.bdd, self.m.l2, self.m.ens2, 4)    # permanent : payé au mois, pas une vacation
 
     def test_par_etat(self):
         r = self.lecteur.get('/api/rh/vacations/')

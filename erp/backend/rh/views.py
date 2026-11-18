@@ -81,7 +81,8 @@ class EnseignantViewSet(FicheViewSet):
         affectations = list(enseignant.affectations.filter(classe__annee=annee).select_related(
             'ec', 'classe', 'enseignant__personne', 'vacation')) if annee else []
         heures = service.Heures(affectations)
-        reponse.data['affectations'] = [ligne_vacation(a, service.etat(a, heures)) for a in affectations]
+        contrats = service.contrats_vacataires([enseignant.pk])
+        reponse.data['affectations'] = [ligne_vacation(a, service.etat(a, heures, contrats=contrats)) for a in affectations]
         return reponse
 
 
@@ -166,8 +167,11 @@ def affectations_de_vacataires(request):
         return AffectationEC.objects.none()
     vacataires = Contrat.objects.filter(type='vacataire', date_debut__lte=annee.date_fin).filter(
         Q(date_fin__isnull=True) | Q(date_fin__gte=annee.date_debut)).values('personne_id')
+    # Sans aucun contrat sur l'année : listé aussi, avec son motif de blocage (contrat oublié).
+    sous_contrat = Contrat.objects.filter(date_debut__lte=annee.date_fin).filter(
+        Q(date_fin__isnull=True) | Q(date_fin__gte=annee.date_debut)).values('personne_id')
     qs = (AffectationEC.objects.filter(classe__annee=annee)
-          .filter(Q(enseignant_id__in=vacataires) | Q(vacation__isnull=False))
+          .filter(Q(enseignant_id__in=vacataires) | Q(vacation__isnull=False) | ~Q(enseignant_id__in=sous_contrat))
           .select_related('ec__departement__faculte', 'classe', 'enseignant__personne', 'vacation'))
     # La faculté ne voit que les EC de sa faculté (rattachement) ; la RH voit tout.
     faculte = None if a_droit(request.user, 'rh') else faculte_rattachee(request.user)
@@ -182,7 +186,7 @@ def affectations_de_vacataires(request):
 def lignes_vacations(request, affectations):
     affectations = list(affectations)
     heures = service.Heures(affectations)
-    contrats = service.contrats_vacataires_en_cours({a.enseignant_id for a in affectations})
+    contrats = service.contrats_vacataires({a.enseignant_id for a in affectations})
     lignes = [ligne_vacation(a, service.etat(a, heures, contrats=contrats)) for a in affectations]
     etat = request.query_params.get('etat')
     if etat == 'a_confirmer':

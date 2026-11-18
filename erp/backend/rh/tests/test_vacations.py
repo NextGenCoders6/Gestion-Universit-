@@ -110,8 +110,8 @@ class ConfirmationTests(Base):
             vacations.confirmer(self.aff)
         self.assertEqual(Vacation.objects.count(), 1)
 
-    def test_contrat_expire(self):
-        self.contrat.date_fin = AUJ - timedelta(days=1)
+    def test_contrat_termine_avant_les_seances(self):
+        self.contrat.date_fin = PASSE - timedelta(days=5)
         self.contrat.save()
         with self.assertRaises(ValidationError) as ctx:
             vacations.confirmer(self.aff)

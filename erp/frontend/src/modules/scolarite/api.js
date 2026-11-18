@@ -1,5 +1,5 @@
 /** Appels à l'API du module Scolarité (/api/scolarite/…). */
-import apiClient from '@/api/client';
+import apiClient, { fetchAllPages } from '@/api/client';
 
 const donnees = (r) => r.data;
 
@@ -53,3 +53,5 @@ export const listerVacations = (params = {}) => apiClient.get('/rh/vacations/', 
 export const historiqueVacations = (params = {}) => apiClient.get('/rh/vacations/historique/', { params }).then(donnees);
 export const confirmerVacation = (affectation, d) => apiClient.post(`/rh/vacations/${affectation}/confirmer/`, d).then(donnees);
 export const retirerVacation = (affectation, motif) => apiClient.post(`/rh/vacations/${affectation}/retirer/`, { motif }).then(donnees);
+
+export const listerAnnees = () => fetchAllPages('/core/annees/');

@@ -17,6 +17,7 @@ describe('RH — vacations', () => {
     vi.resetAllMocks();
     api.listerVacations.mockResolvedValue([LIGNE]);
     api.historiqueVacations.mockResolvedValue([]);
+    api.listerAnnees.mockResolvedValue([{ id: 1, libelle: '2026-2027', en_cours: true }, { id: 2, libelle: '2025-2026', en_cours: false }]);
   });
 
   it('filtre par état', async () => {
@@ -27,5 +28,14 @@ describe('RH — vacations', () => {
     expect(api.listerVacations).toHaveBeenLastCalledWith({ etat: 'a_confirmer' });
     await user.click(screen.getByRole('tab', { name: 'Confirmées' }));
     await waitFor(() => expect(api.listerVacations).toHaveBeenLastCalledWith({ etat: 'confirmee' }));
+  });
+
+  it("choix de l'année", async () => {
+    const user = userEvent.setup();
+    const client = new QueryClient({ defaultOptions: { queries: { retry: false } } });
+    render(<QueryClientProvider client={client}><MemoryRouter><Vacations /></MemoryRouter></QueryClientProvider>);
+    await screen.findByText('MBEMBA Christelle');
+    await user.selectOptions(await screen.findByLabelText('Année'), '2');
+    await waitFor(() => expect(api.listerVacations).toHaveBeenLastCalledWith({ etat: 'a_confirmer', annee: '2' }));
   });
 });

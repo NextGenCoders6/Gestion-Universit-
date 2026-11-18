@@ -12,6 +12,7 @@ import { useToast } from '@/hooks/use-toast';
 import { erreursServeur } from '@/lib/erreurs';
 import { TableHistorique, TableVacations } from '@/modules/rh/components/TablesVacations';
 import { heures, montant } from '@/modules/rh/lib/format';
+import SelecteurAnnee from '@/modules/rh/components/SelecteurAnnee';
 import * as api from '../api';
 
 const ONGLETS = [['a_confirmer', 'À confirmer'], ['en_cours', 'En cours'], ['confirmee', 'Confirmées'], ['historique', 'Historique']];
@@ -80,9 +81,11 @@ function RetirerDialog({ ligne, onFermer }) {
 
 export default function Vacations() {
   const [onglet, setOnglet] = useState('a_confirmer');
+  const [annee, setAnnee] = useState('');
+  const filtreAnnee = annee ? { annee } : {};
   const [confirmation, setConfirmation] = useState(null);
   const [retrait, setRetrait] = useState(null);
-  const lignes = useQuery({ queryKey: ['scolarite', 'vacations', onglet], queryFn: () => api.listerVacations({ etat: onglet }),
+  const lignes = useQuery({ queryKey: ['scolarite', 'vacations', onglet, annee], queryFn: () => api.listerVacations({ etat: onglet, ...filtreAnnee }),
     enabled: onglet !== 'historique' });
   const historique = useQuery({ queryKey: ['scolarite', 'vacations', 'historique'], queryFn: () => api.historiqueVacations(),
     enabled: onglet === 'historique' });
@@ -95,6 +98,7 @@ export default function Vacations() {
     <div className="space-y-4">
       <PageHeader titre="Vacations"
         description="Un vacataire est payé quand il termine son volume : confirmez les heures retenues, la Finance réglera la vacation." />
+      <SelecteurAnnee lister={api.listerAnnees} valeur={annee} onChange={setAnnee} />
       <Tabs value={onglet} onValueChange={setOnglet}>
         <TabsList>{ONGLETS.map(([v, l]) => <TabsTrigger key={v} value={v}>{l}</TabsTrigger>)}</TabsList>
       </Tabs>

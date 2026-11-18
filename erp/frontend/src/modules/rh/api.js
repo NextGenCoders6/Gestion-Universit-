@@ -23,3 +23,5 @@ export const historiqueVacations = (params = {}) => apiClient.get('/rh/vacations
 
 export const listerDepartements = () => fetchAllPages('/core/departements/');
 export const listerFacultes = () => fetchAllPages('/core/facultes/');
+
+export const listerAnnees = () => fetchAllPages('/core/annees/');

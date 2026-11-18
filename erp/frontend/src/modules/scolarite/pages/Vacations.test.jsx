@@ -22,6 +22,7 @@ describe('Scolarité — vacations', () => {
     vi.resetAllMocks();
     api.listerVacations.mockResolvedValue([LIGNE]);
     api.historiqueVacations.mockResolvedValue([]);
+    api.listerAnnees.mockResolvedValue([]);
   });
 
   it('motif exigé quand les heures retenues changent', async () => {

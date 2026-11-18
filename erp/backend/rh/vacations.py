@@ -14,13 +14,12 @@ from django.core.exceptions import ObjectDoesNotExist, ValidationError
 from django.db import transaction
 from django.utils import timezone
 
-from rh.contrats import contrat_en_cours
 from rh.models import HistoriqueVacation, Vacation
 
 APRES_CONFIRMATION = []      # rappel(vacation) : la Finance y crée la ligne de paie (phase 5)
 VERIFICATIONS_RETRAIT = []   # rappel(vacation) : lève ValidationError pour refuser (ex. déjà payée)
 
-BLOCAGE_CONTRAT = "L'enseignant n'a pas de contrat de vacataire en cours."
+BLOCAGE_CONTRAT = "Aucun contrat de vacataire de l'enseignant ne couvre la période des séances."
 
 
 def _cle(ec_id, classe_id, enseignant_id, type_seance):
@@ -28,41 +27,64 @@ def _cle(ec_id, classe_id, enseignant_id, type_seance):
 
 
 class Heures:
-    """Heures effectuées et jumelles de plusieurs affectations, en une requête."""
+    """Heures effectuées, jumelles et dernière séance de plusieurs affectations, en deux requêtes."""
+
+    CHAMPS = ('pk', 'ec_id', 'classe_id', 'enseignant_id', 'type_seance', 'statut', 'seance_liee_id', 'date_seance',
+              'heure_debut', 'heure_fin', 'date_report', 'heure_debut_report', 'heure_fin_report')
 
     def __init__(self, affectations):
         from edt.models import Seance
         from edt.quotas import STATUTS_COMPTES
         self.effectuees = defaultdict(float)
         self.jumelles = defaultdict(float)
+        self.derniere = {}
         classes = {a.classe_id for a in affectations}
         aujourdhui = date.today()
-        seances = Seance.objects.filter(classe_id__in=classes, statut__in=STATUTS_COMPTES).only(
-            'pk', 'ec_id', 'classe_id', 'enseignant_id', 'type_seance', 'statut', 'seance_liee_id', 'date_seance',
-            'heure_debut', 'heure_fin', 'date_report', 'heure_debut_report', 'heure_fin_report')
+
+        def passee(s):
+            jour = s.creneau_effectif()[0]
+            return not jour or jour <= aujourdhui
+
+        seances = [s for s in Seance.objects.filter(classe_id__in=classes, statut__in=STATUTS_COMPTES).only(*self.CHAMPS)
+                   if passee(s)]
+        # Une jumelle n'est déduite que si sa séance principale est elle-même comptée et passée.
+        liees = {s.seance_liee_id for s in seances if s.seance_liee_id}
+        principales = {p.pk for p in Seance.objects.filter(pk__in=liees, statut__in=STATUTS_COMPTES).only(*self.CHAMPS)
+                       if passee(p)} if liees else set()
         for s in seances:
             jour, debut, fin = s.creneau_effectif()
-            if jour and jour > aujourdhui:
-                continue
             duree = Seance.calculer_duree_effective(debut, fin)
             for type_seance in {None, s.type_seance}:
                 cle = _cle(s.ec_id, s.classe_id, s.enseignant_id, type_seance)
                 self.effectuees[cle] += duree
-                if s.seance_liee_id:
+                if s.seance_liee_id in principales:
                     self.jumelles[cle] += duree
+                if jour and (cle not in self.derniere or jour > self.derniere[cle]):
+                    self.derniere[cle] = jour
 
     def de(self, a):
         cle = _cle(a.ec_id, a.classe_id, a.enseignant_id, a.type_seance)
         return self.effectuees.get(cle, 0.0), self.jumelles.get(cle, 0.0)
 
+    def derniere_seance(self, a):
+        return self.derniere.get(_cle(a.ec_id, a.classe_id, a.enseignant_id, a.type_seance))
 
-def contrats_vacataires_en_cours(enseignant_ids, jour=None):
-    """{enseignant_id: contrat de vacataire en cours}, en une requête (pk enseignant = pk personne)."""
-    from rh.contrats import q_en_cours
+
+def contrats_vacataires(enseignant_ids):
+    """{enseignant_id: [contrats de vacataire]}, en une requête (pk enseignant = pk personne)."""
     from rh.models import Contrat
-    qs = Contrat.objects.filter(q_en_cours(jour or timezone.localdate()), type='vacataire',
-                                personne_id__in=list(enseignant_ids))
-    return {c.personne_id: c for c in qs}
+    par = defaultdict(list)
+    for c in Contrat.objects.filter(type='vacataire', personne_id__in=list(enseignant_ids)).order_by('date_debut'):
+        par[c.personne_id].append(c)
+    return par
+
+
+def contrat_de_la_periode(contrats, jour):
+    """Contrat de vacataire qui couvre `jour` (dernière séance faite, sinon aujourd'hui)."""
+    for c in contrats:
+        if c.date_debut <= jour and (c.date_fin is None or jour <= c.date_fin):
+            return c
+    return None
 
 
 def _vacation_de(affectation):
@@ -75,14 +97,16 @@ def _vacation_de(affectation):
 def etat(affectation, heures=None, jour=None, contrats=None):
     """État de vacation d'une affectation (heures, terminée, contrat, confirmable, vacation).
 
-    `heures` (Heures) et `contrats` (contrats_vacataires_en_cours) évitent les requêtes par ligne.
+    Le contrat retenu (blocage et taux) est celui de vacataire qui couvre la dernière séance faite,
+    à défaut celui du jour : une vacation finie se confirme même après la fin du contrat.
+    `heures` (Heures) et `contrats` (contrats_vacataires) évitent les requêtes par ligne.
     """
     heures = heures or Heures([affectation])
     effectuees, jumelles = heures.de(affectation)
     if contrats is None:
-        contrat = contrat_en_cours(affectation.enseignant.personne, jour, type='vacataire')
-    else:
-        contrat = contrats.get(affectation.enseignant_id)
+        contrats = contrats_vacataires([affectation.enseignant_id])
+    reference = heures.derniere_seance(affectation) or jour or timezone.localdate()
+    contrat = contrat_de_la_periode(contrats.get(affectation.enseignant_id, []), reference)
     vacation = _vacation_de(affectation)
     blocage = None
     if vacation is not None:
@@ -104,6 +128,8 @@ def _decimal(valeur, champ):
         raise ValidationError({champ: 'Nombre d’heures invalide.'})
     if not d.is_finite():
         raise ValidationError({champ: 'Nombre d’heures invalide.'})
+    if abs(d) >= 10000:
+        raise ValidationError({champ: 'Nombre d’heures trop grand.'})
     return d
 
 
@@ -150,3 +176,17 @@ def retirer(vacation, *, motif, par=None):
                                       heures_retenues=vacation.heures_retenues, montant=vacation.montant,
                                       motif=motif, par=par, le=timezone.now())
     vacation.delete()
+
+
+CHAMPS_FIGES = ('enseignant_id', 'ec_id', 'classe_id', 'type_seance', 'heures_prevues')
+
+
+def refuser_modification_si_confirmee(affectation):
+    """Branché sur edt.models.VERIFICATIONS_AFFECTATION : une affectation confirmée ne change plus."""
+    if not affectation.pk or not Vacation.objects.filter(affectation_id=affectation.pk).exists():
+        return
+    from edt.models import AffectationEC
+    avant = AffectationEC.objects.filter(pk=affectation.pk).values(*CHAMPS_FIGES).first()
+    if avant and any(avant[c] != getattr(affectation, c) for c in CHAMPS_FIGES):
+        raise ValidationError("La vacation de cette affectation est confirmée par la faculté : retirez d'abord la "
+                              "confirmation pour la modifier.")

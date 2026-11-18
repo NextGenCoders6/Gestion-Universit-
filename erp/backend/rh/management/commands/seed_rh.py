@@ -97,11 +97,23 @@ class Command(BaseCommand):
         enseignant = Enseignant.objects.get(personne__nom=nom)
         a, _ = AffectationEC.objects.get_or_create(ec=ec, classe=classe, enseignant=enseignant, type_seance=None,
                                                    defaults={'heures_prevues': 4})
+        self._notes(ec, classe)
         for debut, fin in ((time(9, 0), time(11, 0)), (time(11, 15), time(13, 15))):
             if not Seance.objects.filter(ec=ec, classe=classe, date_seance=samedi, heure_debut=debut).exists():
                 Seance.objects.create(ec=ec, classe=classe, enseignant=enseignant, date_seance=samedi, heure_debut=debut,
                                       heure_fin=fin, type_seance='CM', statut='Confirmée')
         return a
+
+    @staticmethod
+    def _notes(ec, classe):
+        """L'EC ajouté au programme reçoit ses lignes de notes (notées) : la délibération de S3 reste complète."""
+        from decimal import Decimal as D
+        from scolarite.models import Note
+        for n, inscription in enumerate(classe.inscriptions.exclude(statut='abandonnee').order_by('pk')):
+            note, _ = Note.objects.get_or_create(inscription=inscription, ec=ec)
+            if note.moyenne is None:
+                note.note_devoir, note.note_session = D(str(10 + n % 7)), D(str(11 + n % 6))
+                note.save()
 
     def _vacations(self):
         self._affectation_terminee('SYSEXP', "Systèmes d'exploitation", 'Nkounkou', date(2026, 10, 31))   # à confirmer
