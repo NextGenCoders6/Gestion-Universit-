@@ -9,7 +9,8 @@
  *        `niveaux` absent = visible pour tout niveau du module.
  */
 import {
-  BarChart3, CalendarDays, GraduationCap, MapPin, SlidersHorizontal, Users,
+  BarChart3, BookOpen, CalendarDays, FileText, GraduationCap, Layers, MapPin, School, SlidersHorizontal,
+  UserCheck, Users,
 } from '@/components/ui/icons';
 
 export const REGISTRE = [
@@ -59,7 +60,15 @@ export const REGISTRE = [
     description: 'Utilisateurs et droits, référentiel académique, établissement.',
     icone: SlidersHorizontal,
     chemin: '/parametres',
-    menu: [],
+    menu: [
+      { chemin: 'referentiel', libelle: 'Référentiel', icone: Layers },
+      { chemin: 'classes', libelle: 'Classes', icone: School },
+      { chemin: 'enseignement', libelle: 'Enseignements', icone: BookOpen },
+      { chemin: 'personnes', libelle: 'Personnes', icone: Users },
+      { chemin: 'utilisateurs', libelle: 'Utilisateurs et droits', icone: UserCheck },
+      { chemin: 'etablissement', libelle: 'Établissement', icone: SlidersHorizontal },
+      { chemin: 'audit', libelle: 'Journal d’audit', icone: FileText },
+    ],
   },
 ];
 
