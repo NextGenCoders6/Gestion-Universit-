@@ -12,6 +12,7 @@ admin.site.login = limiter_connexion_admin(admin.site.login)
 urlpatterns = [
     path('admin/', admin.site.urls),
     path('api/core/', include('core.urls')),
+    path('api/edt/', include('edt.urls')),
 ] + static(settings.MEDIA_URL, document_root=settings.MEDIA_ROOT) + [
     # Fichiers du build de l'interface (Vite : base « / »).
     re_path(r'^(?P<chemin>assets/.+|favicon\.svg|icons\.svg)$', fichier_frontend),
