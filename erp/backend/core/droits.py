@@ -35,12 +35,24 @@ def _groupes_de(user):
     return cache
 
 
+# Niveaux accordés par les données plutôt que par un groupe (ex. un chef de
+# département a le niveau « perimetre » dans l'EDT). Chaque fonction reçoit
+# l'utilisateur et renvoie {code_module: [niveaux]}.
+NIVEAUX_CONTEXTUELS = []
+
+
 def niveaux_utilisateur(user, module):
     niveaux = MODULES[module]['niveaux']
     if getattr(user, 'is_superuser', False):
         return list(niveaux)
     groupes = _groupes_de(user)
-    return [n for n in niveaux if nom_groupe(module, n) in groupes]
+    resultat = [n for n in niveaux if nom_groupe(module, n) in groupes]
+    if getattr(user, 'is_authenticated', False):
+        for fonction in NIVEAUX_CONTEXTUELS:
+            for niveau in fonction(user).get(module, []):
+                if niveau not in resultat:
+                    resultat.append(niveau)
+    return resultat
 
 
 def a_droit(user, module, niveau=None):

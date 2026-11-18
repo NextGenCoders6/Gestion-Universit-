@@ -220,3 +220,17 @@ class Seance(models.Model):
                 continue
             resultat.append(s)
         return resultat
+
+
+class ReferentClasse(models.Model):
+    """Enseignant chargé de l'emploi du temps de certaines classes (typiquement les L1), sans être chef."""
+
+    enseignant = models.OneToOneField(Enseignant, on_delete=models.CASCADE, related_name='referent_classes')
+    classes = models.ManyToManyField(Classe, blank=True, related_name='referents')
+
+    class Meta:
+        verbose_name = 'Référent de classes'
+        verbose_name_plural = 'Référents de classes'
+
+    def __str__(self):
+        return f'Référent : {self.enseignant}'
