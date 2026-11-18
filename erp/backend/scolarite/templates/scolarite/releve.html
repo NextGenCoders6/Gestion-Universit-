@@ -1,0 +1,49 @@
+<!DOCTYPE html>
+<html lang="fr"><head><meta charset="utf-8"><title>Relevé — {{ etudiant.matricule }} — {{ semestre }}</title>
+<style>
+@page { size: a4; margin: 1.4cm 1.6cm 2.4cm 1.6cm; @frame pied { -pdf-frame-content: pied; bottom: 0.8cm; margin-left: 1.6cm; margin-right: 1.6cm; height: 1.6cm; } }
+body { font-family: Times-Roman, serif; font-size: 11pt; }
+.entete td { vertical-align: top; font-size: 10pt; }
+.titre { border: 2px solid #000; text-align: center; padding: 6px; margin: 18px 60px 10px 60px; font-size: 14pt; font-weight: bold; }
+.identite { text-align: center; margin-bottom: 10px; }
+table.notes { border-collapse: collapse; width: 100%; }
+table.notes th, table.notes td { border: 1px solid #000; padding: 4px; text-align: center; }
+table.notes th { background-color: #eeeeee; }
+table.notes td.ue { text-align: left; font-weight: bold; }
+table.notes td.ec { text-align: left; padding-left: 14px; }
+.resultat { border: 1.5px solid #000; background-color: #f2f2f2; padding: 6px; margin-top: 10px; font-weight: bold; text-align: center; }
+.signature { margin-top: 30px; text-align: right; }
+.pied { font-size: 8pt; text-align: center; border-top: 1px solid #000; padding-top: 4px; }
+</style></head>
+<body>
+{% include "scolarite/_entete.html" %}
+<div class="titre">RELEVÉ DE NOTES — {{ semestre }}</div>
+<div class="identite">
+  <b>{{ titre }} {{ personne.nom|upper }} {{ personne.prenom }}</b> — Matricule : <b>{{ etudiant.matricule }}</b><br>
+  {{ cycle }} {{ classe.parcours.niveau }} — {{ parcours.nom }} — Année académique <b>{{ inscription.annee.libelle }}</b>
+</div>
+<table class="notes">
+  <thead><tr><th style="width:55%;">Unités d'enseignement / Éléments constitutifs</th><th>Crédits</th><th>Moyenne /20</th></tr></thead>
+  <tbody>
+  {% for bloc in ligne.ues %}
+    <tr><td class="ue">{{ bloc.ue.code }} — {{ bloc.ue.libelle|upper }}</td><td><b>{{ bloc.credits_ue_total }}</b></td>
+        <td><b>{{ bloc.moyenne_ue|floatformat:2 }}</b></td></tr>
+    {% for e in bloc.ecs %}
+    <tr><td class="ec">{{ e.ec.libelle }}</td><td>{{ e.ec.credits }}</td>
+        <td>{% if e.non_saisi %}—{% elif e.absent %}ABS{% else %}{{ e.note|floatformat:2 }}{% endif %}</td></tr>
+    {% endfor %}
+  {% empty %}
+    <tr><td colspan="3"><i>Aucune unité d'enseignement pour ce semestre.</i></td></tr>
+  {% endfor %}
+  </tbody>
+</table>
+<div class="resultat">
+  MOYENNE : {{ resultat.moyenne|floatformat:2 }} / 20 &nbsp;&nbsp;|&nbsp;&nbsp; CRÉDITS : {{ resultat.credits_obtenus }} / {{ resultat.credits_totaux }}
+  &nbsp;&nbsp;|&nbsp;&nbsp; RÉSULTAT : {{ resultat.decision }}{% if resultat.mention != 'NÉANT' %} &nbsp;&nbsp;|&nbsp;&nbsp; MENTION : {{ resultat.mention }}{% endif %}
+</div>
+<div class="signature">
+  Fait à {{ parametres.ville_signature }}, le {{ date }}<br><br><br>
+  <b>{{ parametres.nom_secretaire|upper }}</b><br>{{ titre_secretaire }}
+</div>
+<div id="pied">{% include "scolarite/_pied.html" %}</div>
+</body></html>

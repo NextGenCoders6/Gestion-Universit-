@@ -10,6 +10,7 @@ import re
 from django.core.exceptions import ValidationError
 from django.core.validators import MaxValueValidator, MinValueValidator
 from django.db import models, transaction
+from django.db.models import Q
 
 GENRE = [('M', 'Masculin'), ('F', 'Féminin')]
 SEMESTRES = [(f'S{i}', f'Semestre {i}') for i in range(1, 11)]
@@ -284,6 +285,11 @@ class Classe(ModeleValide):
     @property
     def faculte(self):
         return self.portail.faculte if self.portail_id else self.filiere.faculte
+
+    def ecs_au_programme(self):
+        """EC au programme : UE de son portail (L1) ou de sa filière, semestres de son niveau."""
+        q = Q(ue__portail_id=self.portail_id) if self.portail_id else Q(ue__filiere_id=self.filiere_id)
+        return ElementConstitutif.objects.filter(q, ue__semestre__in=self.semestres).select_related('ue', 'departement')
 
     def clean(self):
         if not self.parcours_id:

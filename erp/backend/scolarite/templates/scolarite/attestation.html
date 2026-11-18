@@ -1,0 +1,34 @@
+<!DOCTYPE html>
+<html lang="fr"><head><meta charset="utf-8"><title>Attestation — {{ etudiant.matricule }}</title>
+<style>
+@page { size: a4; margin: 1.6cm 1.8cm 2.4cm 1.8cm; @frame pied { -pdf-frame-content: pied; bottom: 0.8cm; margin-left: 1.8cm; margin-right: 1.8cm; height: 1.6cm; } }
+body { font-family: Times-Roman, serif; font-size: 13pt; }
+.entete td { vertical-align: top; font-size: 11pt; }
+.titre { border: 2px solid #000; text-align: center; padding: 8px; margin: 34px 40px; font-size: 18pt; font-weight: bold; }
+.corps { line-height: 1.7; text-align: justify; }
+.signature { margin-top: 40px; text-align: right; }
+.pied { font-size: 8pt; text-align: center; border-top: 1px solid #000; padding-top: 4px; }
+</style></head>
+<body>
+{% include "scolarite/_entete.html" %}
+<div class="titre">ATTESTATION DE FRÉQUENTATION</div>
+<div class="corps">
+  Je, soussigné{% if parametres.genre_secretaire == 'F' %}e{% endif %}
+  <b>{{ titre_secretaire }} {{ parametres.nom_secretaire }}</b>, Secrétaire Universitaire de l'Université Catholique
+  du Congo-Brazzaville (UCCB), située à {{ parametres.ville_signature }}, atteste par la présente que :
+  <br><br>
+  <b>{{ titre }} {{ personne.nom|upper }} {{ personne.prenom }}</b>, matricule <b>{{ etudiant.matricule }}</b>,
+  est régulièrement {% if personne.genre == 'F' %}inscrite{% else %}inscrit{% endif %} à l'UCCB pour l'année
+  académique <b>{{ inscription.annee.libelle }}</b>.
+  <br><br>
+  L'intéressé{% if personne.genre == 'F' %}e{% endif %} suit ses études en <b>{{ cycle }} {{ classe.parcours.niveau }}</b>
+  (<b>{{ parcours.nom }}</b>) au sein de la <b>{{ faculte.nom }}</b>.
+  <br><br>
+  En foi de quoi, la présente attestation lui est délivrée pour servir et valoir ce que de droit.
+</div>
+<div class="signature">
+  Fait à {{ parametres.ville_signature }}, le {{ date }}<br><br><br>
+  <b>{{ parametres.nom_secretaire|upper }}</b><br>{{ titre_secretaire }}
+</div>
+<div id="pied">{% include "scolarite/_pied.html" %}</div>
+</body></html>

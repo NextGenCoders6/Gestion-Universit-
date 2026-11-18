@@ -5,6 +5,7 @@ les enchaînera en phase 6.
 """
 from datetime import date
 
+from django.apps import apps
 from django.conf import settings
 from django.contrib.auth.models import User
 from django.core.management.base import BaseCommand, CommandError
@@ -18,6 +19,7 @@ from core.models import (
 from core.models.acces import RattachementFaculte
 
 MOT_DE_PASSE_DEMO = 'Uccb!2026demo'
+MODULES_METIER = ('edt', 'scolarite', 'rh', 'finance', 'logistique')
 
 FACULTES = {
     'FST': {
@@ -67,6 +69,12 @@ class Command(BaseCommand):
         self.stdout.write(self.style.SUCCESS(f'Socle prêt. Mot de passe des comptes de démo : {MOT_DE_PASSE_DEMO}'))
 
     def _vider(self):
+        # Les données des modules (EDT, Scolarité…) protègent le référentiel : on les vide d'abord,
+        # module par module dans l'ordre inverse d'installation, modèles du dernier au premier.
+        for app in reversed(list(apps.get_app_configs())):
+            if app.name in MODULES_METIER:
+                for modele in reversed(list(app.get_models())):
+                    modele.objects.all().delete()
         for modele in (JournalAudit, RattachementFaculte, ElementConstitutif, UniteEnseignement, Classe,
                        Etudiant, Employe, Enseignant):
             modele.objects.all().delete()

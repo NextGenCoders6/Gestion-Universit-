@@ -1,0 +1,34 @@
+<!DOCTYPE html>
+<html lang="fr"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1">
+<title>{% if document %}Document authentique{% else %}Document introuvable{% endif %} — UCCB</title>
+<style>
+:root { --vert: #0b7a3e; --rouge: #b42318; --fond: #f5f7f6; --texte: #1d2939; --carte: #ffffff; --bord: #d0d5dd; }
+@media (prefers-color-scheme: dark) { :root { --fond: #101814; --texte: #e4e7ec; --carte: #18221c; --bord: #344054; } }
+body { margin: 0; background: var(--fond); color: var(--texte); font-family: system-ui, -apple-system, "Segoe UI", sans-serif; }
+main { max-width: 520px; margin: 48px auto; padding: 0 16px; }
+.carte { background: var(--carte); border: 1px solid var(--bord); border-radius: 12px; padding: 24px; }
+h1 { font-size: 1.3rem; margin: 0 0 4px; }
+.ok { color: var(--vert); } .ko { color: var(--rouge); }
+dl { display: grid; grid-template-columns: max-content 1fr; gap: 8px 16px; margin: 20px 0 0; }
+dt { font-weight: 600; } dd { margin: 0; }
+p.note { font-size: .85rem; opacity: .75; margin-top: 20px; }
+</style></head>
+<body><main><div class="carte">
+{% if document %}
+  <h1 class="ok">✔ Document authentique</h1>
+  <div>Université Catholique du Congo-Brazzaville</div>
+  <dl>
+    <dt>Document</dt><dd>{{ document.get_type_display }}</dd>
+    <dt>Étudiant</dt><dd>{{ document.inscription.etudiant.personne.nom_complet }}</dd>
+    <dt>Matricule</dt><dd>{{ document.inscription.etudiant.matricule }}</dd>
+    <dt>Classe</dt><dd>{{ document.inscription.classe.libelle }}</dd>
+    {% if document.semestre %}<dt>Semestre</dt><dd>{{ document.semestre }}</dd>{% endif %}
+    {% if document.decision %}<dt>Décision</dt><dd>{{ document.decision }}</dd>{% endif %}
+    <dt>Émis le</dt><dd>{{ document.emis_le|date:"j F Y à H:i" }}</dd>
+  </dl>
+  <p class="note">Cette page confirme que le document a bien été émis par l'UCCB. Comparez ces informations avec le document présenté.</p>
+{% else %}
+  <h1 class="ko">✖ Document introuvable</h1>
+  <p>Aucun document officiel ne correspond à ce code. Le document présenté n'a pas été émis par l'UCCB, ou son QR code a été modifié.</p>
+{% endif %}
+</div></main></body></html>

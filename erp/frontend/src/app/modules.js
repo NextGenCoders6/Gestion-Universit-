@@ -9,8 +9,8 @@
  *        `niveaux` absent = visible pour tout niveau du module.
  */
 import {
-  BarChart3, BookOpen, CalendarDays, FileText, GraduationCap, Layers, List, MapPin, School, SlidersHorizontal,
-  UserCheck, Users,
+  ArrowRightCircle, BarChart3, BookOpen, CalendarDays, FileSpreadsheet, FileText, GraduationCap, Layers, List, MapPin,
+  Pencil, School, SlidersHorizontal, UserCheck, Users,
 } from '@/components/ui/icons';
 
 export const REGISTRE = [
@@ -20,7 +20,12 @@ export const REGISTRE = [
     description: 'Inscriptions, notes, délibérations et documents officiels.',
     icone: GraduationCap,
     chemin: '/scolarite',
-    menu: [],
+    menu: [
+      { chemin: 'etudiants', libelle: 'Étudiants', icone: Users },
+      { chemin: 'saisie', libelle: 'Saisie des notes', icone: Pencil, niveaux: ['faculte'] },
+      { chemin: 'deliberation', libelle: 'Délibérations', icone: FileSpreadsheet, niveaux: ['faculte'] },
+      { chemin: 'promotion', libelle: 'Promotion et orientation', icone: ArrowRightCircle, niveaux: ['faculte'] },
+    ],
   },
   {
     code: 'edt',

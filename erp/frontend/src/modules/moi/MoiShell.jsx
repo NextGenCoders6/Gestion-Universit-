@@ -1,12 +1,15 @@
 /** « Mon espace » : même layout qu'un module, menu selon les rôles de la personne. */
 import { Navigate, Route, Routes } from 'react-router-dom';
-import { BookOpen, CalendarDays, FileText, UserCircle } from '@/components/ui/icons';
+import { BookOpen, CalendarDays, FileText, GraduationCap, UserCircle, Users } from '@/components/ui/icons';
 import ModuleShell from '@/app/ModuleShell';
 import Introuvable from '@/app/pages/Introuvable';
 import useAuthStore, { aRole } from '@/store/authStore';
 import MesDocuments from './pages/MesDocuments';
+import MesEnseignants from './pages/MesEnseignants';
 import MesEnseignements from './pages/MesEnseignements';
+import MesNotes from './pages/MesNotes';
 import MonPlanning from './pages/MonPlanning';
+import MonPlanningEtudiant from './pages/MonPlanningEtudiant';
 
 const MENU_ENSEIGNANT = [
   { chemin: 'planning', libelle: 'Mon planning', icone: CalendarDays, element: <MonPlanning /> },
@@ -14,12 +17,18 @@ const MENU_ENSEIGNANT = [
   { chemin: 'documents', libelle: 'Mes documents', icone: FileText, element: <MesDocuments /> },
 ];
 
+const MENU_ETUDIANT = [
+  { chemin: 'notes', libelle: 'Mes notes', icone: GraduationCap, element: <MesNotes /> },
+  { chemin: 'planning', libelle: 'Mon planning', icone: CalendarDays, element: <MonPlanningEtudiant /> },
+  { chemin: 'enseignants', libelle: 'Mes enseignants', icone: Users, element: <MesEnseignants /> },
+];
+
 function EnAttente() {
   return (
     <div className="flex flex-col items-center justify-center gap-3 py-16 text-center">
       <UserCircle className="size-10 text-muted-foreground" />
       <p className="max-w-md text-sm text-muted-foreground">
-        Votre planning arrivera avec la Scolarité : il dépend de votre inscription dans une classe.
+        Aucun espace personnel n’est associé à votre compte : il s’ouvre aux enseignants et aux étudiants.
       </p>
     </div>
   );
@@ -27,7 +36,8 @@ function EnAttente() {
 
 export default function MoiShell() {
   const enseignant = useAuthStore((s) => aRole(s, 'enseignant'));
-  const menu = enseignant ? MENU_ENSEIGNANT : [];
+  const etudiant = useAuthStore((s) => aRole(s, 'etudiant'));
+  const menu = enseignant ? MENU_ENSEIGNANT : etudiant ? MENU_ETUDIANT : [];
   const module = { code: 'moi', libelle: 'Mon espace', chemin: '/moi', menu };
   return (
     <ModuleShell module={module}>

@@ -24,6 +24,7 @@ Pour un essai rapide sans MySQL, mettre `DB_ENGINE=sqlite` dans `.env`.
 .venv/bin/python manage.py migrate
 .venv/bin/python manage.py seed_socle
 .venv/bin/python manage.py seed_edt      # emploi du temps de démonstration
+.venv/bin/python manage.py seed_scolarite  # étudiants, notes, délibération S1 de la L1 MIP, année 2027-2028
 .venv/bin/python manage.py runserver
 ```
 
@@ -32,7 +33,7 @@ Pour un essai rapide sans MySQL, mettre `DB_ENGINE=sqlite` dans `.env`.
 ## Tests
 
 ```bash
-DB_ENGINE=sqlite .venv/bin/python manage.py test core edt
+DB_ENGINE=sqlite .venv/bin/python manage.py test core edt scolarite
 ```
 
 ## Comptes de démonstration
@@ -52,6 +53,10 @@ Mot de passe commun : `Uccb!2026demo` — valeur de démonstration, à changer h
 | `chef` | enseignant chef du département Informatique : gère l'EDT de la L2 INFO |
 | `referent` | enseignant référent des L1 MIP et BCG (après `seed_edt`) |
 | `enseignant` | enseignante (Mon espace : planning, enseignements, documents ; après `seed_edt`) |
+| `etudiant` | étudiant de L1 MIP (Mon espace : notes, planning, enseignants ; après `seed_scolarite`) |
+
+Activation d'un compte étudiant (après `seed_scolarite`) : matricule de Jonas Bakala, e-mail
+`jonas.bakala@etu.uccb.cg`, date de naissance 12/05/2006.
 | `employe` | gardien, sans aucun droit |
 
 ## Droits

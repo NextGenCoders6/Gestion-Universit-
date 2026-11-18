@@ -21,6 +21,7 @@ const ENV_DJANGO = {
   DEBUG: 'True',
   SECRET_KEY: 'cle-e2e-jetable',
   ALLOWED_HOSTS: '127.0.0.1,localhost',
+  BASE_URL: 'http://127.0.0.1:8011',
 };
 
 export default defineConfig({
@@ -36,7 +37,7 @@ export default defineConfig({
   projects: [{ name: 'chromium', use: { ...devices['Desktop Chrome'] } }],
   webServer: [
     {
-      command: `${PYTHON} manage.py migrate -v0 && ${PYTHON} manage.py seed_socle --reset && ${PYTHON} manage.py seed_edt && ${PYTHON} manage.py runserver 127.0.0.1:8011 --noreload`,
+      command: `${PYTHON} manage.py migrate -v0 && ${PYTHON} manage.py seed_socle --reset && ${PYTHON} manage.py seed_edt && ${PYTHON} manage.py seed_scolarite && ${PYTHON} manage.py runserver 127.0.0.1:8011 --noreload`,
       cwd: BACKEND,
       env: ENV_DJANGO,
       url: 'http://127.0.0.1:8011/api/core/modules/',
