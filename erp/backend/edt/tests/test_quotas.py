@@ -35,12 +35,18 @@ class QuotasECTests(TestCase):
         self.assertEqual(quotas.heures_consommees(self.m.algo, l1_bcg), 0)
         self.assertEqual(quotas.heures_consommees(self.m.algo, self.m.l1), 2)
 
-    def test_cours_mutualise_ne_compte_quune_fois(self):
+    def test_cours_mutualise_compte_dans_chaque_classe(self):
+        """Mutualisé = une séance par classe : chacune pèse sur le quota de sa classe."""
+        from core.models import Classe
+        from edt.models import Seance
+        bcg = Classe.objects.create(annee=self.m.annee, parcours=f.parcours('Licence', 1),
+                                    portail=f.portail(self.m.fac, 'BCG'))
+        ec_bcg = f.ec(f.ue('UE-BCG', 'S1', port=bcg.portail), 'ALGO-BCG', credits=2, dep=self.m.dep)
         a = seance_brute(self.m.algo, self.m.l1, self.m.ens)
-        b = seance_brute(self.m.algo, self.m.l1, self.m.ens)
-        b.seance_liee = a
-        b.save(update_fields=['seance_liee'])
+        b = seance_brute(ec_bcg, bcg, self.m.ens)
+        Seance.objects.filter(pk=b.pk).update(seance_liee=a)
         self.assertEqual(quotas.heures_consommees(self.m.algo, self.m.l1), 2)
+        self.assertEqual(quotas.heures_consommees(ec_bcg, bcg), 2)
 
     def test_pause_deduite_et_creneau_de_report_prioritaire(self):
         seance_brute(self.m.algo, self.m.l1, self.m.ens, debut=time(9, 0), fin=time(12, 15))  # 3 h

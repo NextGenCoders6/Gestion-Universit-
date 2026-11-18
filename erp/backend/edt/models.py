@@ -148,6 +148,48 @@ class Seance(models.Model):
     def annee(self):
         return self.classe.annee
 
+    def clean(self):
+        from edt import validation as v
+        if not (self.ec_id and self.classe_id and self.enseignant_id):
+            return
+        v.valider_horaires(self.heure_debut, self.heure_fin)
+        v.valider_dimanche(self.date_seance)
+        v.valider_annee_non_archivee(self.classe.annee)
+        v.valider_ec_dans_classe(self.ec, self.classe)
+        v.valider_departement(self.enseignant, self.ec, self.classe)
+        v.valider_bornes_periode(self.date_seance, self.classe, self.ec)
+        if self.statut == 'Reportée':
+            v.valider_creneau_report(self)
+        v.valider_seance_liee(self)
+
+        jour, debut, fin = self.creneau_effectif()
+        exemptes = list(self.seances_associees.values_list('pk', flat=True)) if self.pk else []
+        if self.seance_liee_id:
+            exemptes.append(self.seance_liee_id)
+        v.valider_conflit_enseignant(self.enseignant, jour, debut, fin, self.pk, exemptes)
+        v.valider_conflit_classe(self.classe, jour, debut, fin, self.pk)
+        v.valider_doublon(self.statut, self.classe, self.ec, self.date_seance, self.heure_debut, self.heure_fin,
+                          self.pk)
+        if self.statut in ('Confirmée', 'Reportée'):
+            duree = v.duree_effective(debut, fin)
+            v.valider_volume_ec(self.ec, self.classe, duree, self.pk)
+            v.valider_affectation(self.ec, self.classe, self.enseignant, self.type_seance, duree, self.pk)
+            v.valider_volume_journalier(self.classe, jour, debut, fin, self.pk)
+
+    def save(self, *args, **kwargs):
+        """Valide sous verrou : deux enregistrements simultanés ne passent pas tous les deux les contrôles."""
+        from django.db import transaction
+        with transaction.atomic():
+            filtres = models.Q()
+            if self.enseignant_id:
+                filtres |= models.Q(enseignant_id=self.enseignant_id)
+            if self.classe_id:
+                filtres |= models.Q(classe_id=self.classe_id)
+            if filtres:
+                list(Seance.objects.select_for_update().filter(filtres).exclude(pk=self.pk).values_list('pk', flat=True))
+            self.full_clean()
+            super().save(*args, **kwargs)
+
     @staticmethod
     def calculer_duree_effective(heure_debut, heure_fin):
         """Durée en heures, pause de 11:00–11:15 déduite."""
