@@ -1,4 +1,5 @@
-"""Scolarité : inscriptions annuelles, notes par EC et résultats de semestre."""
+"""Scolarité : inscriptions annuelles, notes par EC, résultats de semestre, documents émis."""
+import secrets
 from decimal import Decimal
 
 from django.conf import settings
@@ -128,3 +129,30 @@ class ResultatSemestre(ModeleValide):
     def clean(self):
         if self.inscription_id and self.semestre and self.semestre not in self.inscription.classe.semestres:
             raise ValidationError({'semestre': "Ce semestre n'appartient pas au niveau de la classe."})
+
+
+def nouveau_jeton():
+    return secrets.token_urlsafe(24)  # 32 caractères
+
+
+class DocumentEmis(models.Model):
+    """Trace d'un document officiel émis ; son jeton est encodé dans le QR code."""
+
+    TYPE_CHOICES = [('attestation', 'Attestation de fréquentation'), ('releve', 'Relevé de notes')]
+
+    jeton = models.CharField(max_length=32, unique=True, default=nouveau_jeton, editable=False)
+    type = models.CharField(max_length=12, choices=TYPE_CHOICES)
+    inscription = models.ForeignKey(Inscription, on_delete=models.PROTECT, related_name='documents')
+    semestre = models.CharField(max_length=3, choices=SEMESTRES, blank=True)
+    decision = models.CharField(max_length=10, blank=True)
+    emis_le = models.DateTimeField(auto_now_add=True)
+    emis_par = models.ForeignKey(settings.AUTH_USER_MODEL, on_delete=models.SET_NULL, null=True, blank=True,
+                                 related_name='+')
+
+    class Meta:
+        verbose_name = 'Document émis'
+        verbose_name_plural = 'Documents émis'
+        ordering = ['-emis_le']
+
+    def __str__(self):
+        return f'{self.get_type_display()} — {self.inscription.etudiant.matricule} ({self.jeton})'

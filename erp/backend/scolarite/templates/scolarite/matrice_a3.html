@@ -1,0 +1,66 @@
+<!DOCTYPE html>
+<html lang="fr"><head><meta charset="utf-8"><title>PV — {{ classe.libelle }} — {{ semestre }}</title>
+<style>
+@page { size: a3 landscape; margin: 1cm; }
+body { font-family: Helvetica, sans-serif; font-size: 7pt; }
+.entete td { vertical-align: top; font-size: 9pt; }
+.titre { text-align: center; font-size: 11pt; font-weight: bold; margin: 6px 0; }
+table.pv { border-collapse: collapse; width: 100%; }
+table.pv th, table.pv td { border: 0.5px solid #888; padding: 2px; text-align: center; }
+th.n1 { background-color: #1a3a5c; color: #ffffff; }
+th.n2 { background-color: #2c5282; color: #ffffff; }
+td.nom { text-align: left; }
+td.ko { text-decoration: underline; }
+td.ns { color: #999999; }
+td.mue { font-weight: bold; background-color: #dce8f5; }
+td.admis { font-weight: bold; background-color: #c8dff0; }
+.legende { margin-top: 6px; font-size: 6.5pt; color: #444444; }
+table.signatures { width: 100%; margin-top: 18px; font-size: 8pt; }
+</style></head>
+<body>
+<table class="entete"><tr>
+  <td style="width:90px;">{% if logo %}<img src="{{ logo }}" width="70">{% endif %}</td>
+  <td style="text-align:center;"><b>UNIVERSITÉ CATHOLIQUE DU CONGO – BRAZZAVILLE</b><br><b>{{ faculte.nom }}</b><br>
+    Niveau : {{ classe.parcours.code }} — Semestre : {{ semestre }} — Parcours : {{ parcours.nom }} —
+    Année : {{ classe.annee.libelle }} — Date : {{ date }}</td>
+</tr></table>
+<div class="titre">PROCÈS-VERBAL DE DÉLIBÉRATION</div>
+<table class="pv">
+  <thead>
+    <tr>
+      <th class="n1" rowspan="2">Rang</th><th class="n1" rowspan="2">Nom et prénom(s)</th>
+      <th class="n1" rowspan="2">Matricule</th><th class="n1" rowspan="2">S.</th>
+      {% for ue, ecs in prog %}<th class="n1" colspan="{{ ecs|length|add:2 }}">{{ ue.code }}</th>{% endfor %}
+      <th class="n1" rowspan="2">Moy.</th><th class="n1" rowspan="2">Crédits</th><th class="n1" rowspan="2">Décision</th>
+    </tr>
+    <tr>
+      {% for ue, ecs in prog %}{% for ec in ecs %}<th class="n2">{{ ec.code }}<br>({{ ec.credits }})</th>{% endfor %}<th class="n2">Moy. UE</th><th class="n2">Cr.</th>{% endfor %}
+    </tr>
+  </thead>
+  <tbody>
+  {% for l in lignes %}
+    <tr>
+      <td>{{ l.rang }}</td><td class="nom">{{ l.inscription.etudiant.personne.nom_complet }}</td>
+      <td>{{ l.inscription.etudiant.matricule }}</td><td>{{ l.inscription.etudiant.personne.genre }}</td>
+      {% for bloc in l.ues %}
+        {% for e in bloc.ecs %}
+          {% if e.non_saisi %}<td class="ns">—</td>{% elif e.absent %}<td class="ko">ABS</td>{% elif e.note < 6 %}<td class="ko">{{ e.note|floatformat:2 }}</td>{% else %}<td>{{ e.note|floatformat:2 }}</td>{% endif %}
+        {% endfor %}
+        <td class="mue">{{ bloc.moyenne_ue|floatformat:2 }}</td><td>{% if bloc.validee %}{{ bloc.credits_ue_total }}{% else %}0{% endif %}</td>
+      {% endfor %}
+      <td><b>{{ l.moyenne|floatformat:2 }}</b></td><td>{{ l.credits_valides }}/{{ l.credits_totaux }}</td>
+      <td {% if l.decision == 'ADMIS' %}class="admis"{% endif %}>{{ l.decision }}{% if l.mention != 'NÉANT' %}<br>{{ l.mention }}{% endif %}</td>
+    </tr>
+  {% empty %}
+    <tr><td colspan="7"><i>Aucun étudiant inscrit.</i></td></tr>
+  {% endfor %}
+  </tbody>
+</table>
+<div class="legende">Note soulignée : éliminatoire (&lt; 6). « — » : note non saisie (ignorée du calcul). ABS : absent (compte 0).
+  {% for ue, ecs in prog %}{% for ec in ecs %} {{ ec.code }} : {{ ec.libelle }} ;{% endfor %}{% endfor %}</div>
+<table class="signatures"><tr>
+  <td style="text-align:left;">{{ titre_secretaire }}<br><br><b>{{ parametres.nom_secretaire|upper }}</b></td>
+  <td style="text-align:center;">Fait à {{ parametres.ville_signature }}, le {{ date }}</td>
+  <td style="text-align:right;">{{ titre_doyen }}<br><br><b>{{ nom_doyen|upper }}</b></td>
+</tr></table>
+</body></html>

@@ -23,3 +23,17 @@ class Faculte(BasePermission):
     def has_permission(self, request, view):
         user = request.user
         return bool(user and user.is_authenticated and a_droit(user, 'scolarite', 'faculte'))
+
+
+def DroitScolarite(niveau):
+    """Permission : un niveau précis de la Scolarité, lecture comprise."""
+
+    class Droit(BasePermission):
+        message = 'Accès non autorisé à la Scolarité.'
+
+        def has_permission(self, request, view):
+            user = request.user
+            return bool(user and user.is_authenticated and a_droit(user, 'scolarite', niveau))
+
+    Droit.__name__ = f'DroitScolarite_{niveau}'
+    return Droit

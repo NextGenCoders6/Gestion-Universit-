@@ -1,7 +1,7 @@
 from django.urls import include, path
 from rest_framework.routers import DefaultRouter
 
-from scolarite import views_faculte, views_secretariat
+from scolarite import views_documents, views_faculte, views_secretariat
 
 router = DefaultRouter()
 router.register('etudiants', views_secretariat.EtudiantViewSet, basename='scolarite-etudiant')
@@ -9,6 +9,10 @@ router.register('inscriptions', views_secretariat.InscriptionViewSet, basename='
 
 urlpatterns = [
     path('etudiants/<int:pk>/notes/', views_faculte.NotesEtudiantView.as_view(), name='scolarite_notes_etudiant'),
+    path('etudiants/<int:pk>/attestation.pdf', views_documents.AttestationView.as_view(),
+         name='scolarite_attestation'),
+    path('etudiants/<int:pk>/releve.pdf', views_documents.ReleveView.as_view(), name='scolarite_releve'),
+    path('matrice-a3.pdf', views_documents.MatriceA3View.as_view(), name='scolarite_matrice_a3'),
     path('saisie/', views_faculte.SaisieView.as_view(), name='scolarite_saisie'),
     path('deliberation/', views_faculte.DeliberationView.as_view(), name='scolarite_deliberation'),
     path('deliberation/excel/', views_faculte.DeliberationExcelView.as_view(), name='scolarite_deliberation_excel'),

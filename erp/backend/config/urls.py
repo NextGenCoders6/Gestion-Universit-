@@ -4,6 +4,7 @@ from django.contrib import admin
 from django.urls import include, path, re_path
 
 from core.spa import fichier_frontend, spa_index
+from scolarite.views_documents import verifier_document
 from core.throttles import limiter_connexion_admin
 
 admin.site.site_header = 'UCCB — Administration technique'
@@ -14,9 +15,11 @@ urlpatterns = [
     path('api/core/', include('core.urls')),
     path('api/edt/', include('edt.urls')),
     path('api/scolarite/', include('scolarite.urls')),
+    # Page publique ouverte par le QR code des documents officiels (hors SPA).
+    path('verifier/<str:jeton>', verifier_document, name='verifier_document'),
 ] + static(settings.MEDIA_URL, document_root=settings.MEDIA_ROOT) + [
     # Fichiers du build de l'interface (Vite : base « / »).
     re_path(r'^(?P<chemin>assets/.+|favicon\.svg|icons\.svg)$', fichier_frontend),
     # Toute autre URL hors API / administration / fichiers : l'interface React.
-    re_path(r'^(?!api/|admin/|media/|static/|assets/).*$', spa_index),
+    re_path(r'^(?!api/|admin/|media/|static/|assets/|verifier/).*$', spa_index),
 ]

@@ -104,6 +104,9 @@ DEFAULT_AUTO_FIELD = 'django.db.models.BigAutoField'
 # Build de l'interface React (npm run build dans erp/frontend).
 FRONTEND_DIST = BASE_DIR / 'frontend_dist'
 
+# Adresse publique de l'ERP : les QR codes des documents officiels pointent vers {BASE_URL}/verifier/<jeton>.
+BASE_URL = config('BASE_URL', default='http://localhost:8000').rstrip('/')
+
 CORS_ALLOWED_ORIGINS = config(
     'CORS_ALLOWED_ORIGINS', default='http://localhost:5173,http://127.0.0.1:5173', cast=Csv()
 )
