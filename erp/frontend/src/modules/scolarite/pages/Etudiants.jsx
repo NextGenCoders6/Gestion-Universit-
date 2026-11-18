@@ -10,7 +10,7 @@ import DataTable from '@/components/shared/DataTable';
 import PageHeader from '@/components/shared/PageHeader';
 import * as api from '../api';
 import NouvelEtudiantDialog from '../components/NouvelEtudiantDialog';
-import Selecteur from '../components/Selecteur';
+import Selecteur from '@/components/shared/Selecteur';
 import { useClasses, useEstSecretariat, useSelection } from '../hooks';
 import { optionsClasses, STATUTS_ETUDIANT } from '../lib/format';
 

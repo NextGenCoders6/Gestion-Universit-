@@ -10,6 +10,6 @@ describe('Scolarité — menu selon le niveau', () => {
   });
 
   it('la faculté voit tout', () => {
-    expect(libelles(['faculte'])).toEqual(['Étudiants', 'Saisie des notes', 'Délibérations', 'Promotion et orientation']);
+    expect(libelles(['faculte'])).toEqual(['Étudiants', 'Saisie des notes', 'Délibérations', 'Promotion et orientation', 'Vacations']);
   });
 });

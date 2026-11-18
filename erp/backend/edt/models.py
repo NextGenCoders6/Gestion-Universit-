@@ -13,6 +13,10 @@ from django.db.models import Sum
 
 from core.models import Classe, ElementConstitutif, Enseignant
 
+# Vérifications ajoutées par d'autres modules avant d'enregistrer une affectation (ex. la RH refuse de
+# modifier une affectation dont la vacation est confirmée). Chaque fonction lève ValidationError.
+VERIFICATIONS_AFFECTATION = []
+
 TYPES_SEANCE = [('CM', 'CM'), ('TD', 'TD'), ('TP', 'TP')]
 
 
@@ -49,6 +53,8 @@ class AffectationEC(models.Model):
     def clean(self):
         if not (self.ec_id and self.classe_id and self.enseignant_id):
             return
+        for verification in VERIFICATIONS_AFFECTATION:
+            verification(self)
         from edt.validation import valider_annee_non_archivee, valider_ec_dans_classe
         valider_annee_non_archivee(self.classe.annee)
         valider_ec_dans_classe(self.ec, self.classe)
