@@ -11,7 +11,7 @@ from rest_framework.views import APIView
 
 from core.api.filtres import entier
 from core.droits import a_droit
-from core.models import AnneeAcademique, Classe, ElementConstitutif, Enseignant
+from core.models import AnneeAcademique, Classe, Enseignant
 from edt import quotas
 from edt.droits import enseignant_de
 from edt.models import AffectationEC, DocumentPedagogique, ReferentClasse, Seance
@@ -270,9 +270,8 @@ def contexte_quotas(classes_ids):
 
 
 def ecs_de_classe(classe):
-    """EC au programme d'une classe : UE de son portail/filière, semestres de son niveau."""
-    q = Q(ue__portail_id=classe.portail_id) if classe.portail_id else Q(ue__filiere_id=classe.filiere_id)
-    return ElementConstitutif.objects.filter(q, ue__semestre__in=classe.semestres).select_related('ue', 'departement')
+    """EC au programme d'une classe (voir Classe.ecs_au_programme)."""
+    return classe.ecs_au_programme()
 
 
 class EnseignementsView(APIView):

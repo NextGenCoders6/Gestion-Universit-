@@ -6,3 +6,6 @@ python-decouple>=3.8
 mysqlclient>=2.2
 Pillow>=10.0
 factory_boy>=3.3
+xhtml2pdf>=0.2.11
+qrcode[pil]>=7.4
+openpyxl>=3.1
