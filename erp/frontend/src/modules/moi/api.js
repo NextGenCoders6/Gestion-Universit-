@@ -20,3 +20,8 @@ export async function telechargerDocument(doc) {
   lien.click();
   URL.revokeObjectURL(url);
 }
+
+/** Espace personnel de l'étudiant (/api/scolarite/moi/…). */
+export const mesNotes = () => apiClient.get('/scolarite/moi/notes/').then(donnees);
+export const monPlanningEtudiant = (params = {}) => apiClient.get('/scolarite/moi/planning/', { params }).then(donnees);
+export const mesEnseignants = () => apiClient.get('/scolarite/moi/enseignants/').then(donnees);

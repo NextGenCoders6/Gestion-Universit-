@@ -1,5 +1,6 @@
 // Arbre de routage : connexion, lanceur, un sous-arbre par module, espace personnel.
 import { createBrowserRouter, Navigate, Outlet } from 'react-router-dom';
+import ActivationPage from '@/features/auth/ActivationPage';
 import LoginPage from '@/features/auth/LoginPage';
 import Lanceur from './Lanceur';
 import ModuleShell from './ModuleShell';
@@ -34,6 +35,7 @@ function routeModule(module) {
 
 export const router = createBrowserRouter([
   { path: '/login', element: <LoginPage /> },
+  { path: '/activation', element: <ActivationPage /> },
   {
     element: <RequireAuth />,
     children: [

@@ -9,6 +9,9 @@ vi.mock('./api', () => ({
   monPlanning: vi.fn(() => Promise.resolve([])),
   mesEnseignements: vi.fn(() => Promise.resolve([])),
   mesDocuments: vi.fn(() => Promise.resolve([])),
+  mesNotes: vi.fn(() => Promise.resolve({ matricule: 'M', inscriptions: [] })),
+  monPlanningEtudiant: vi.fn(() => Promise.resolve([])),
+  mesEnseignants: vi.fn(() => Promise.resolve([])),
 }));
 vi.mock('@/modules/edt/components/PlanningGrid', () => ({ default: () => <div>grille</div> }));
 
@@ -41,9 +44,19 @@ describe('Mon espace', () => {
     }
   });
 
-  it('un étudiant voit le message d’attente', async () => {
+  it('un étudiant voit ses notes, son planning et ses enseignants', async () => {
     connecter(['etudiant']);
     rendre('/moi');
-    expect(await screen.findByText(/Votre planning arrivera avec la Scolarité/)).toBeInTheDocument();
+    expect((await screen.findAllByRole('heading', { name: 'Mes notes' })).length).toBeGreaterThan(0);
+    for (const nom of ['Mes notes', 'Mon planning', 'Mes enseignants']) {
+      expect(screen.getAllByRole('link', { name: nom }).length).toBeGreaterThan(0);
+    }
+    expect(screen.queryByRole('link', { name: 'Mes documents' })).not.toBeInTheDocument();
+  });
+
+  it('sans rôle : message d’attente', async () => {
+    connecter([]);
+    rendre('/moi');
+    expect(await screen.findByText(/Aucun espace personnel/)).toBeInTheDocument();
   });
 });

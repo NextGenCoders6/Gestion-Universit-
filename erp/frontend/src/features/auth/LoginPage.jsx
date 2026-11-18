@@ -4,7 +4,7 @@
 import { useState, useEffect, useMemo, useCallback } from 'react';
 import { useForm } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
-import { Navigate, useLocation } from 'react-router-dom';
+import { Link, Navigate, useLocation } from 'react-router-dom';
 import { Eye, EyeOff, ChevronLeft, ChevronRight, Pause, Play, Loader2 } from '@/components/ui/icons';
 import useAuthStore from '@/store/authStore';
 import { loginSchema } from '@/lib/schemas';
@@ -286,7 +286,7 @@ export default function LoginPage() {
                     type="text"
                     autoComplete="username"
                     autoFocus
-                    placeholder="prenom.nom"
+                    placeholder="prenom.nom ou matricule"
                     className="w-full h-[50px] box-border rounded-lg border border-[#BDB8AE] px-3.5 font-inherit text-[17px] text-uccb-ink bg-white outline-none focus:border-2 focus:border-uccb-green focus:ring-4 focus:ring-uccb-green/20 transition"
                     aria-invalid={!!errors.username}
                     {...register('username')}
@@ -350,6 +350,10 @@ export default function LoginPage() {
 
                 <p className="self-center text-[14px] text-[#4A4741]">
                   Mot de passe oublié ? Contactez l’administration.
+                </p>
+                <p className="self-center text-[14px] text-[#4A4741]">
+                  Étudiant, première connexion ?{' '}
+                  <Link to="/activation" className="font-semibold text-uccb-green underline underline-offset-4">Activer mon compte</Link>
                 </p>
               </div>
             </div>
