@@ -146,3 +146,56 @@ class PaiementEtudiant(models.Model):
 
     class Meta:
         ordering = ['-date', '-pk']
+
+
+class Paie(models.Model):
+    """Ligne de paie : salaire mensuel d'un contrat permanent, ou vacation confirmée par la faculté."""
+
+    ORIGINES = [('salaire', 'Salaire'), ('vacation', 'Vacation')]
+
+    origine = models.CharField(max_length=10, choices=ORIGINES)
+    personne = models.ForeignKey('core.Personne', on_delete=models.PROTECT, related_name='paies')
+    contrat = models.ForeignKey('rh.Contrat', on_delete=models.PROTECT, related_name='paies')
+    mois = models.CharField(max_length=7, null=True, blank=True, validators=[valider_mois],
+                            help_text='AAAA-MM pour un salaire ; vide pour une vacation.')
+    vacation = models.OneToOneField('rh.Vacation', on_delete=models.CASCADE, null=True, blank=True, related_name='paie')
+    montant_du = models.DecimalField(max_digits=12, decimal_places=2)
+    montant_paye = models.DecimalField(max_digits=12, decimal_places=2, default=0)
+    montant_ajuste = models.BooleanField(default=False)
+    created_at = models.DateTimeField(auto_now_add=True)
+
+    class Meta:
+        ordering = ['-mois', 'personne__nom', 'personne__prenom']
+        # Les NULL (vacations) sont distincts dans un index unique : seul un salaire par contrat et par mois.
+        constraints = [models.UniqueConstraint(fields=['contrat', 'mois'], name='salaire_unique_par_mois')]
+
+    def __str__(self):
+        quoi = f'Salaire {self.mois}' if self.origine == 'salaire' else 'Vacation'
+        return f'{quoi} — {self.personne} : {self.montant_paye}/{self.montant_du}'
+
+    @property
+    def statut(self):
+        if self.montant_paye <= 0:
+            return 'en_attente'
+        return 'paye' if self.montant_paye >= self.montant_du else 'partiel'
+
+    @property
+    def reste(self):
+        return max(Decimal('0'), self.montant_du - self.montant_paye)
+
+
+class PaiementPaie(models.Model):
+    # CASCADE : une ligne de paie de vacation retirée emporte ses paiements annulés ; le journal, lui, reste.
+    paie = models.ForeignKey(Paie, on_delete=models.CASCADE, related_name='paiements')
+    montant = models.DecimalField(max_digits=12, decimal_places=2)
+    mode = models.CharField(max_length=15, choices=MODES_PAIEMENT)
+    date = models.DateField()
+    reference = models.CharField(max_length=60, blank=True)
+    operation = models.OneToOneField(Operation, on_delete=models.PROTECT, related_name='paiement_paie')
+    annule = models.BooleanField(default=False)
+    motif_annulation = models.CharField(max_length=255, blank=True)
+    par = models.ForeignKey('auth.User', on_delete=models.SET_NULL, null=True, blank=True, related_name='+')
+    created_at = models.DateTimeField(auto_now_add=True)
+
+    class Meta:
+        ordering = ['-date', '-pk']
