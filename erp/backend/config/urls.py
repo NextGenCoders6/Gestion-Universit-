@@ -15,6 +15,7 @@ urlpatterns = [
     path('api/core/', include('core.urls')),
     path('api/edt/', include('edt.urls')),
     path('api/scolarite/', include('scolarite.urls')),
+    path('api/rh/', include('rh.urls')),
     # Page publique ouverte par le QR code des documents officiels (hors SPA).
     path('verifier/<str:jeton>', verifier_document, name='verifier_document'),
 ] + static(settings.MEDIA_URL, document_root=settings.MEDIA_ROOT) + [

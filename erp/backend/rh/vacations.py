@@ -10,7 +10,7 @@ from collections import defaultdict
 from datetime import date
 from decimal import Decimal, InvalidOperation
 
-from django.core.exceptions import ValidationError
+from django.core.exceptions import ObjectDoesNotExist, ValidationError
 from django.db import transaction
 from django.utils import timezone
 
@@ -56,14 +56,34 @@ class Heures:
         return self.effectuees.get(cle, 0.0), self.jumelles.get(cle, 0.0)
 
 
-def etat(affectation, heures=None, jour=None):
-    """État de vacation d'une affectation (heures, terminée, contrat, confirmable, vacation)."""
+def contrats_vacataires_en_cours(enseignant_ids, jour=None):
+    """{enseignant_id: contrat de vacataire en cours}, en une requête (pk enseignant = pk personne)."""
+    from rh.contrats import q_en_cours
+    from rh.models import Contrat
+    qs = Contrat.objects.filter(q_en_cours(jour or timezone.localdate()), type='vacataire',
+                                personne_id__in=list(enseignant_ids))
+    return {c.personne_id: c for c in qs}
+
+
+def _vacation_de(affectation):
+    try:
+        return affectation.vacation
+    except ObjectDoesNotExist:
+        return None
+
+
+def etat(affectation, heures=None, jour=None, contrats=None):
+    """État de vacation d'une affectation (heures, terminée, contrat, confirmable, vacation).
+
+    `heures` (Heures) et `contrats` (contrats_vacataires_en_cours) évitent les requêtes par ligne.
+    """
     heures = heures or Heures([affectation])
     effectuees, jumelles = heures.de(affectation)
-    contrat = contrat_en_cours(affectation.enseignant.personne, jour, type='vacataire')
-    vacation = getattr(affectation, 'vacation', None) if affectation.pk else None
-    if vacation is None:
-        vacation = Vacation.objects.filter(affectation_id=affectation.pk).first()
+    if contrats is None:
+        contrat = contrat_en_cours(affectation.enseignant.personne, jour, type='vacataire')
+    else:
+        contrat = contrats.get(affectation.enseignant_id)
+    vacation = _vacation_de(affectation)
     blocage = None
     if vacation is not None:
         blocage = 'Vacation déjà confirmée.'
