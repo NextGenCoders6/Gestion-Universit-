@@ -26,7 +26,7 @@ import PageHeader from '@/components/shared/PageHeader';
 import { useToast } from '@/hooks/use-toast';
 import { erreursServeur } from '@/lib/erreurs';
 import * as api from '../api';
-import Champ from './Champ';
+import Champ from '@/components/shared/Champ';
 import { valeursInitiales, versApi } from './formulaire';
 
 function useListe(ressource, params) {

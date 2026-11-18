@@ -15,7 +15,7 @@ import PageHeader from '@/components/shared/PageHeader';
 import { useToast } from '@/hooks/use-toast';
 import { erreursServeur } from '@/lib/erreurs';
 import * as api from '../api';
-import Champ from '../components/Champ';
+import Champ from '@/components/shared/Champ';
 
 const LIBELLES_NIVEAUX = {
   utilisateur: 'Utilisateur', responsable: 'Responsable', secretariat: 'Secrétariat', faculte: 'Faculté',

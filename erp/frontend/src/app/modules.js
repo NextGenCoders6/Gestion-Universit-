@@ -9,7 +9,7 @@
  *        `niveaux` absent = visible pour tout niveau du module.
  */
 import {
-  BarChart3, BookOpen, CalendarDays, FileText, GraduationCap, Layers, MapPin, School, SlidersHorizontal,
+  BarChart3, BookOpen, CalendarDays, FileText, GraduationCap, Layers, List, MapPin, School, SlidersHorizontal,
   UserCheck, Users,
 } from '@/components/ui/icons';
 
@@ -28,7 +28,12 @@ export const REGISTRE = [
     description: 'Planning des séances, affectations et progression des enseignements.',
     icone: CalendarDays,
     chemin: '/edt',
-    menu: [],
+    menu: [
+      { chemin: 'planning', libelle: 'Planning', icone: CalendarDays },
+      { chemin: 'seances', libelle: 'Séances', icone: List },
+      { chemin: 'enseignements', libelle: 'Enseignements', icone: BookOpen },
+      { chemin: 'referents', libelle: 'Référents de classes', icone: UserCheck, niveaux: ['responsable', 'perimetre', 'utilisateur'] },
+    ],
   },
   {
     code: 'rh',
