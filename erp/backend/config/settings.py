@@ -29,6 +29,7 @@ INSTALLED_APPS = [
     'edt',
     'scolarite',
     'rh',
+    'finance',
 ]
 
 MIDDLEWARE = [
