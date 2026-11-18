@@ -2,7 +2,7 @@ from rest_framework import serializers
 
 from core.models import Enseignant
 from edt import quotas
-from edt.models import AffectationEC, ReferentClasse, Seance
+from edt.models import AffectationEC, DocumentPedagogique, ReferentClasse, Seance
 
 
 class SeanceSerializer(serializers.ModelSerializer):
@@ -97,3 +97,26 @@ class EnseignantSerializer(serializers.ModelSerializer):
     class Meta:
         model = Enseignant
         fields = ['id', 'matricule', 'nom_complet', 'grade', 'departement', 'departement_libelle']
+
+
+class DocumentSerializer(serializers.ModelSerializer):
+    ec_code = serializers.CharField(source='ec.code', read_only=True)
+    classe_libelle = serializers.CharField(source='classe.libelle', read_only=True)
+    enseignant_nom = serializers.CharField(source='enseignant.personne.nom_complet', read_only=True)
+    nom_fichier = serializers.SerializerMethodField()
+
+    class Meta:
+        model = DocumentPedagogique
+        fields = ['id', 'titre', 'fichier', 'nom_fichier', 'type_doc', 'ec', 'ec_code', 'classe', 'classe_libelle',
+                  'enseignant', 'enseignant_nom', 'created_at']
+        extra_kwargs = {'fichier': {'write_only': True}}
+
+    def get_fields(self):
+        champs = super().get_fields()
+        if self.context.get('enseignant_impose'):  # dépôt depuis Mon espace : c'est l'enseignant connecté
+            champs['enseignant'].read_only = True
+        return champs
+
+    def get_nom_fichier(self, obj):
+        import os
+        return os.path.basename(obj.fichier.name) if obj.fichier else None

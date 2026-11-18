@@ -234,3 +234,42 @@ class ReferentClasse(models.Model):
 
     def __str__(self):
         return f'Référent : {self.enseignant}'
+
+
+def chemin_document(instance, nom_fichier):
+    from edt.fichiers import chemin_televerse
+    return chemin_televerse('documents/%Y/%m', nom_fichier)
+
+
+def valider_document(fichier):
+    from edt.fichiers import valider_fichier_televerse
+    valider_fichier_televerse(fichier)
+
+
+class DocumentPedagogique(models.Model):
+    TYPE_CHOICES = [('cours', 'Cours'), ('td', 'TD'), ('tp', 'TP'), ('autre', 'Autre')]
+
+    titre = models.CharField(max_length=200)
+    fichier = models.FileField(upload_to=chemin_document, max_length=255, validators=[valider_document])
+    type_doc = models.CharField(max_length=10, choices=TYPE_CHOICES, default='cours')
+    ec = models.ForeignKey(ElementConstitutif, on_delete=models.PROTECT, related_name='documents')
+    classe = models.ForeignKey(Classe, on_delete=models.PROTECT, related_name='documents')
+    enseignant = models.ForeignKey(Enseignant, on_delete=models.PROTECT, related_name='documents')
+    created_at = models.DateTimeField(auto_now_add=True)
+
+    class Meta:
+        verbose_name = 'Document pédagogique'
+        verbose_name_plural = 'Documents pédagogiques'
+        ordering = ['-created_at']
+
+    def __str__(self):
+        return self.titre
+
+    def clean(self):
+        if self.ec_id and self.classe_id:
+            from edt.validation import valider_ec_dans_classe
+            valider_ec_dans_classe(self.ec, self.classe)
+
+    def save(self, *args, **kwargs):
+        self.full_clean()
+        super().save(*args, **kwargs)

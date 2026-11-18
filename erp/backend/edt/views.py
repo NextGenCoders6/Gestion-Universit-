@@ -14,11 +14,11 @@ from core.droits import a_droit
 from core.models import AnneeAcademique, Classe, ElementConstitutif, Enseignant
 from edt import quotas
 from edt.droits import enseignant_de
-from edt.models import AffectationEC, ReferentClasse, Seance
+from edt.models import AffectationEC, DocumentPedagogique, ReferentClasse, Seance
 from edt.perimetre import classes_autorisees, filtrer_par_classes, peut_gerer_classe, restreindre_enseignants
 from edt.permissions import LectureEdt
 from edt.serializers import (
-    AffectationSerializer, EnseignantSerializer, ReferentSerializer, ReportSerializer, SeanceSerializer,
+    AffectationSerializer, DocumentSerializer, EnseignantSerializer, ReferentSerializer, ReportSerializer, SeanceSerializer,
 )
 
 RELATIONS_SEANCE = ('ec', 'classe__annee', 'classe__parcours', 'classe__portail', 'classe__filiere',
@@ -292,3 +292,59 @@ class MesEnseignementsView(APIView):
         if annee is not None:
             qs = qs.filter(classe__annee_id=annee)
         return Response(AffectationSerializer(qs, many=True).data)
+
+
+# ── Documents pédagogiques ───────────────────────────────────────
+
+def reponse_telechargement(document):
+    import os
+    from django.http import FileResponse
+    return FileResponse(document.fichier.open('rb'), as_attachment=True,
+                        filename=os.path.basename(document.fichier.name))
+
+
+class DocumentViewSet(ClasseGereeMixin, viewsets.ModelViewSet):
+    serializer_class = DocumentSerializer
+    permission_classes = [LectureEdt]
+
+    def get_queryset(self):
+        qs = DocumentPedagogique.objects.select_related('ec', 'classe', 'enseignant__personne')
+        qs = filtrer_par_classes(qs, classes_autorisees(self.request.user))
+        for nom, champ in (('ec', 'ec_id'), ('classe', 'classe_id'), ('enseignant', 'enseignant_id')):
+            valeur = entier(self.request, nom)
+            if valeur is not None:
+                qs = qs.filter(**{champ: valeur})
+        return qs
+
+    @action(detail=True, methods=['get'])
+    def telecharger(self, request, pk=None):
+        return reponse_telechargement(self.get_object())
+
+
+class MesDocumentsView(APIView):
+    """L'enseignant dépose des documents pour les EC qui lui sont affectés."""
+
+    permission_classes = [IsAuthenticated, EstEnseignant]
+
+    def get(self, request):
+        qs = DocumentPedagogique.objects.filter(enseignant=enseignant_de(request.user)).select_related('ec', 'classe')
+        return Response(DocumentSerializer(qs, many=True).data)
+
+    def post(self, request):
+        ens = enseignant_de(request.user)
+        serializer = DocumentSerializer(data=request.data, context={'enseignant_impose': True})
+        serializer.is_valid(raise_exception=True)
+        ec, classe = serializer.validated_data['ec'], serializer.validated_data['classe']
+        if not AffectationEC.objects.filter(ec=ec, classe=classe, enseignant=ens).exists():
+            raise PermissionDenied("Vous n'êtes pas affecté à cet EC dans cette classe.")
+        serializer.save(enseignant=ens)
+        return Response(serializer.data, status=status.HTTP_201_CREATED)
+
+
+class MonDocumentTelechargementView(APIView):
+    permission_classes = [IsAuthenticated, EstEnseignant]
+
+    def get(self, request, pk):
+        from django.shortcuts import get_object_or_404
+        doc = get_object_or_404(DocumentPedagogique, pk=pk, enseignant=enseignant_de(request.user))
+        return reponse_telechargement(doc)
