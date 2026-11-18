@@ -49,7 +49,8 @@ class AffectationEC(models.Model):
     def clean(self):
         if not (self.ec_id and self.classe_id and self.enseignant_id):
             return
-        from edt.validation import valider_ec_dans_classe
+        from edt.validation import valider_annee_non_archivee, valider_ec_dans_classe
+        valider_annee_non_archivee(self.classe.annee)
         valider_ec_dans_classe(self.ec, self.classe)
         if not self.hors_departement and self.enseignant.departement_id != self.ec.departement_id:
             raise ValidationError({'enseignant': (

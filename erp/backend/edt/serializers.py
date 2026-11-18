@@ -32,7 +32,9 @@ class SeanceSerializer(serializers.ModelSerializer):
         actuel = self.instance.statut if self.instance else None
         if valeur == actuel or (self.instance is None and valeur == 'brouillon'):
             return valeur
-        if self.instance is not None and valeur in ('brouillon', 'Annulée') and actuel != 'Reportée':
+        if self.instance is not None and valeur == 'Annulée':
+            return valeur
+        if self.instance is not None and valeur == 'brouillon' and actuel != 'Reportée':
             return valeur
         raise serializers.ValidationError(
             'Utilisez « Publier » pour confirmer une séance et « Reporter » pour la reporter.'
@@ -61,18 +63,27 @@ class AffectationSerializer(serializers.ModelSerializer):
                   'type_seance', 'heures_prevues', 'hors_departement', 'heures_consommees', 'heures_effectuees',
                   'heures_restantes', 'warnings']
 
+    # Si la vue fournit `totaux` (quotas.Totaux) et `volumes` ({(ec, classe): heures prévues}) dans le
+    # contexte, aucun calcul ne relance de requête par ligne.
+    def _totaux(self):
+        return self.context.get('totaux')
+
     def get_heures_consommees(self, obj):
-        return obj.heures_consommees()
+        t = self._totaux()
+        return t.consommees(obj.ec_id, obj.classe_id, obj.enseignant_id, obj.type_seance) if t else obj.heures_consommees()
 
     def get_heures_effectuees(self, obj):
-        return obj.heures_effectuees()
+        t = self._totaux()
+        return t.effectuees(obj.ec_id, obj.classe_id, obj.enseignant_id, obj.type_seance) if t else obj.heures_effectuees()
 
     def get_heures_restantes(self, obj):
-        return obj.heures_restantes()
+        return obj.heures_prevues - self.get_heures_consommees(obj)
 
     def get_warnings(self, obj):
-        if obj.has_volume_warning():
-            return [f'Le total des affectations ({obj.volume_total_affectations():g} h) dépasse le volume de '
+        volumes = self.context.get('volumes')
+        total = volumes.get((obj.ec_id, obj.classe_id), 0) if volumes is not None else obj.volume_total_affectations()
+        if total > quotas.heures_max(obj.ec):
+            return [f'Le total des affectations ({total:g} h) dépasse le volume de '
                     f"l'EC {obj.ec.code} ({quotas.heures_max(obj.ec)} h)."]
         return []
 

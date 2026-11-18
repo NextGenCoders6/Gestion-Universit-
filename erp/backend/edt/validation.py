@@ -42,6 +42,20 @@ def duree_effective(heure_debut, heure_fin):
     return duree.total_seconds() / 3600
 
 
+def q_jour_effectif(debut=None, fin=None):
+    """Séances dont le jour effectif (report complet, sinon jour d'origine) est dans [debut, fin]."""
+    reportee = Q(statut='Reportée', date_report__isnull=False, heure_debut_report__isnull=False,
+                 heure_fin_report__isnull=False)
+    sur_origine, sur_report = Q(), Q()
+    if debut:
+        sur_origine &= Q(date_seance__gte=debut)
+        sur_report &= Q(date_report__gte=debut)
+    if fin:
+        sur_origine &= Q(date_seance__lte=fin)
+        sur_report &= Q(date_report__lte=fin)
+    return (reportee & sur_report) | (~reportee & sur_origine)
+
+
 def q_occupe_creneau(jour, heure_debut, heure_fin):
     """Séances qui occupent réellement ce créneau (confirmées, ou reportées sur leur créneau effectif)."""
     origine = Q(date_seance=jour, heure_debut__lt=heure_fin, heure_fin__gt=heure_debut)
@@ -82,7 +96,7 @@ def valider_dimanche(jour, champ='date_seance'):
 
 def valider_annee_non_archivee(annee):
     if annee and annee.statut == 'archivee':
-        raise ValidationError(f"Impossible de planifier une séance sur l'année archivée {annee}.")
+        raise ValidationError(f"L'année {annee} est archivée : son emploi du temps ne peut plus être modifié.")
 
 
 def valider_ec_dans_classe(ec, classe):
@@ -157,6 +171,9 @@ def valider_seance_liee(seance):
         jumelles.append(seance.seance_liee)
     if seance.pk:
         jumelles.extend(seance.seances_associees.all())
+    # Déplacement groupé d'une paire : les jumelles modifiées en mémoire priment sur la base.
+    en_memoire = {j.pk: j for j in getattr(seance, '_jumelles_en_cours', [])}
+    jumelles = [en_memoire.get(j.pk, j) for j in jumelles]
     for j in jumelles:
         if j.enseignant_id != seance.enseignant_id or j.creneau_effectif() != seance.creneau_effectif():
             raise ValidationError({'seance_liee': (

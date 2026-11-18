@@ -16,6 +16,7 @@ from edt import quotas
 from edt.droits import enseignant_de
 from edt.models import AffectationEC, DocumentPedagogique, ReferentClasse, Seance
 from edt.perimetre import classes_autorisees, filtrer_par_classes, peut_gerer_classe, restreindre_enseignants
+from edt.validation import q_jour_effectif, valider_annee_non_archivee
 from edt.permissions import LectureEdt
 from edt.serializers import (
     AffectationSerializer, DocumentSerializer, EnseignantSerializer, ReferentSerializer, ReportSerializer, SeanceSerializer,
@@ -44,6 +45,26 @@ def _verrouiller(enseignants=(), classes=()):
     if classes:
         q |= Q(classe__in=list(classes))
     list(Seance.objects.select_for_update().filter(q).values_list('pk', flat=True))
+
+
+CHAMPS_CRENEAU = ('date_seance', 'heure_debut', 'heure_fin')
+
+
+def jumelles_de(seance):
+    """Séances mutualisées avec celle-ci (dans les deux sens)."""
+    return list(Seance.objects.filter(Q(pk=seance.seance_liee_id) | Q(seance_liee=seance)).exclude(pk=seance.pk))
+
+
+def enregistrer_paire(seance, jumelles, changements):
+    """Applique un même changement de créneau (ou report) à une séance et à ses jumelles, tout ou rien."""
+    for j in jumelles:
+        for champ, valeur in changements.items():
+            setattr(j, champ, valeur)
+    groupe = [seance, *jumelles]
+    with transaction.atomic():
+        for s in groupe:
+            s._jumelles_en_cours = [x for x in groupe if x is not s]
+            s.save()
 
 
 class ClasseGereeMixin:
@@ -80,16 +101,42 @@ class SeanceViewSet(ClasseGereeMixin, viewsets.ModelViewSet):
         if statut:
             qs = qs.filter(statut=statut)
         debut, fin = _date(p, 'date_debut'), _date(p, 'date_fin')
-        if debut:
-            qs = qs.filter(date_seance__gte=debut)
-        if fin:
-            qs = qs.filter(date_seance__lte=fin)
+        if debut or fin:
+            qs = qs.filter(q_jour_effectif(debut, fin))
         return qs
+
+    def _exiger_jumelle_geree(self, serializer):
+        liee = serializer.validated_data.get('seance_liee')
+        if liee is not None and not peut_gerer_classe(self.request.user, liee.classe):
+            raise PermissionDenied("La séance liée n'est pas dans votre périmètre.")
+
+    def perform_create(self, serializer):
+        self._exiger_jumelle_geree(serializer)
+        super().perform_create(serializer)
+
+    def perform_update(self, serializer):
+        self._exiger_jumelle_geree(serializer)
+        if 'classe' in serializer.validated_data:
+            self._exiger_classe_geree(serializer.validated_data['classe'])
+        seance = serializer.instance
+        creneau = {c: serializer.validated_data[c] for c in CHAMPS_CRENEAU if c in serializer.validated_data}
+        jumelles = jumelles_de(seance)
+        if creneau and jumelles:
+            for champ, valeur in serializer.validated_data.items():
+                setattr(seance, champ, valeur)
+            enregistrer_paire(seance, jumelles, creneau)
+        else:
+            serializer.save()
+
+    def perform_destroy(self, seance):
+        valider_annee_non_archivee(seance.classe.annee)
+        seance.delete()
 
     @action(detail=True, methods=['get'])
     def seances_liees(self, request, pk=None):
         seance = self.get_object()
-        liees = ([seance.seance_liee] if seance.seance_liee_id else []) + list(seance.seances_associees.all())
+        visibles = self.get_queryset()  # même périmètre que la liste : rien hors périmètre
+        liees = list(visibles.filter(Q(pk=seance.seance_liee_id) | Q(seance_liee=seance)).exclude(pk=seance.pk))
         return Response({'count': len(liees), 'results': SeanceSerializer(liees, many=True).data})
 
     @action(detail=True, methods=['post'])
@@ -150,14 +197,16 @@ class SeanceViewSet(ClasseGereeMixin, viewsets.ModelViewSet):
         seance = self.get_object()
         if not peut_gerer_classe(request.user, seance.classe):
             raise PermissionDenied("Cette classe n'est pas dans votre périmètre.")
+        if seance.statut not in ('Confirmée', 'Reportée'):
+            raise ValidationError('Seules les séances publiées peuvent être reportées.')
         donnees = ReportSerializer(data=request.data)
         donnees.is_valid(raise_exception=True)
+        report = {**donnees.validated_data, 'statut': 'Reportée'}
         with transaction.atomic():
             _verrouiller([seance.enseignant], [seance.classe])
-            for champ, valeur in donnees.validated_data.items():
+            for champ, valeur in report.items():
                 setattr(seance, champ, valeur)
-            seance.statut = 'Reportée'
-            seance.save()
+            enregistrer_paire(seance, jumelles_de(seance), report)
         return Response(SeanceSerializer(seance).data)
 
     @action(detail=False, methods=['get'])
@@ -197,6 +246,28 @@ class AffectationViewSet(ClasseGereeMixin, viewsets.ModelViewSet):
                 qs = qs.filter(**{champ: valeur})
         return qs
 
+    def perform_destroy(self, affectation):
+        valider_annee_non_archivee(affectation.classe.annee)
+        affectation.delete()
+
+    def list(self, request, *args, **kwargs):
+        qs = self.filter_queryset(self.get_queryset())
+        page = self.paginate_queryset(qs)
+        lignes = list(page if page is not None else qs)
+        contexte = {**self.get_serializer_context(), **contexte_quotas({a.classe_id for a in lignes})}
+        data = AffectationSerializer(lignes, many=True, context=contexte).data
+        return self.get_paginated_response(data) if page is not None else Response(data)
+
+
+def contexte_quotas(classes_ids):
+    """Totaux d'heures et volumes affectés des classes données, pour AffectationSerializer."""
+    from collections import defaultdict
+    volumes = defaultdict(float)
+    for ec_id, classe_id, heures in AffectationEC.objects.filter(classe_id__in=classes_ids).values_list(
+            'ec_id', 'classe_id', 'heures_prevues'):
+        volumes[(ec_id, classe_id)] += heures
+    return {'totaux': quotas.Totaux(classes_ids), 'volumes': volumes}
+
 
 def ecs_de_classe(classe):
     """EC au programme d'une classe : UE de son portail/filière, semestres de son niveau."""
@@ -217,22 +288,29 @@ class EnseignementsView(APIView):
         if classe_id is not None:
             classes = classes.filter(pk=classe_id)
         departement = entier(request, 'departement')
+        classes = list(classes.order_by('parcours__type_parcours', 'parcours__niveau', 'libelle'))
+        ids = {c.pk for c in classes}
+        contexte = contexte_quotas(ids)
+        totaux = contexte['totaux']
+        affectations = {}
+        for a in AffectationEC.objects.filter(classe_id__in=ids).select_related('ec', 'classe', 'enseignant__personne'):
+            affectations.setdefault((a.ec_id, a.classe_id), []).append(a)
         lignes = []
-        for classe in classes.order_by('parcours__type_parcours', 'parcours__niveau', 'libelle'):
+        for classe in classes:
             ecs = ecs_de_classe(classe)
             if departement is not None:
                 ecs = ecs.filter(departement_id=departement)
             for ec in ecs.order_by('ue__semestre', 'code'):
-                affectations = AffectationEC.objects.filter(ec=ec, classe=classe).select_related('enseignant__personne')
+                liste = affectations.get((ec.pk, classe.pk), [])
                 lignes.append({
                     'ec': ec.pk, 'ec_code': ec.code, 'ec_libelle': ec.libelle, 'semestre': ec.ue.semestre,
                     'departement': ec.departement_id, 'departement_libelle': ec.departement.libelle,
                     'classe': classe.pk, 'classe_libelle': classe.libelle,
                     'heures_max': quotas.heures_max(ec),
                     'plafonds': {t: quotas.plafond_type(ec, t) for t in ('CM', 'TD', 'TP')},
-                    'heures_consommees': quotas.heures_consommees(ec, classe),
-                    'heures_effectuees': quotas.heures_effectuees(ec, classe),
-                    'affectations': AffectationSerializer(affectations, many=True).data,
+                    'heures_consommees': totaux.consommees(ec.pk, classe.pk),
+                    'heures_effectuees': totaux.effectuees(ec.pk, classe.pk),
+                    'affectations': AffectationSerializer(liste, many=True, context=contexte).data,
                 })
         return Response({'count': len(lignes), 'results': lignes})
 
@@ -275,10 +353,8 @@ class MonPlanningView(APIView):
     def get(self, request):
         qs = Seance.objects.filter(enseignant=enseignant_de(request.user), statut__in=['Confirmée', 'Reportée'])
         debut, fin = _date(request, 'date_debut'), _date(request, 'date_fin')
-        if debut:
-            qs = qs.filter(Q(date_seance__gte=debut) | Q(date_report__gte=debut))
-        if fin:
-            qs = qs.filter(Q(date_seance__lte=fin) | Q(date_report__lte=fin))
+        if debut or fin:
+            qs = qs.filter(q_jour_effectif(debut, fin))
         return Response(SeanceSerializer(qs.select_related(*RELATIONS_SEANCE), many=True).data)
 
 
@@ -319,6 +395,11 @@ class DocumentViewSet(ClasseGereeMixin, viewsets.ModelViewSet):
     @action(detail=True, methods=['get'])
     def telecharger(self, request, pk=None):
         return reponse_telechargement(self.get_object())
+
+    def perform_destroy(self, document):
+        valider_annee_non_archivee(document.classe.annee)
+        document.fichier.delete(save=False)
+        document.delete()
 
 
 class MesDocumentsView(APIView):

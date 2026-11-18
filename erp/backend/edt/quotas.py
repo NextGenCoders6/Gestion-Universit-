@@ -57,3 +57,36 @@ def heures_effectuees(ec, classe, *, enseignant=None, type_seance=None):
 
 def heures_restantes(ec, classe, *, exclure=None):
     return heures_max(ec) - heures_consommees(ec, classe, exclure=exclure)
+
+
+class Totaux:
+    """Heures consommées et effectuées de plusieurs classes, calculées en une seule requête.
+
+    Évite de relancer les requêtes de quotas pour chaque ligne d'une liste
+    (enseignements, affectations). Mêmes règles que les fonctions ci-dessus.
+    """
+
+    def __init__(self, classes_ids):
+        from collections import defaultdict
+        from edt.models import Seance
+        self._consommees = defaultdict(float)
+        self._effectuees = defaultdict(float)
+        seances = Seance.objects.filter(classe_id__in=list(classes_ids), statut__in=STATUTS_COMPTES).only(
+            'pk', 'ec_id', 'classe_id', 'enseignant_id', 'type_seance', 'statut', 'seance_liee_id', 'date_seance',
+            'heure_debut', 'heure_fin', 'date_report', 'heure_debut_report', 'heure_fin_report')
+        aujourdhui = date.today()
+        for s in Seance.dedupliquer_mutualisees(seances):
+            jour, debut, fin = s.creneau_effectif()
+            duree = Seance.calculer_duree_effective(debut, fin)
+            for cle in ((s.ec_id, s.classe_id, None, None), (s.ec_id, s.classe_id, s.enseignant_id, None),
+                        (s.ec_id, s.classe_id, None, s.type_seance),
+                        (s.ec_id, s.classe_id, s.enseignant_id, s.type_seance)):
+                self._consommees[cle] += duree
+                if not jour or jour <= aujourdhui:
+                    self._effectuees[cle] += duree
+
+    def consommees(self, ec_id, classe_id, enseignant_id=None, type_seance=None):
+        return self._consommees.get((ec_id, classe_id, enseignant_id, type_seance or None), 0.0)
+
+    def effectuees(self, ec_id, classe_id, enseignant_id=None, type_seance=None):
+        return self._effectuees.get((ec_id, classe_id, enseignant_id, type_seance or None), 0.0)
