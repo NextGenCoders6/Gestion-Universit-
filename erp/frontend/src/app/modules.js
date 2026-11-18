@@ -10,7 +10,7 @@
  */
 import {
   ArrowRightCircle, BarChart3, BookOpen, CalendarDays, Clock, FileSpreadsheet, FileText, GraduationCap, Layers, List, MapPin,
-  Pencil, School, SlidersHorizontal, UserCheck, Users,
+  Pencil, School, SlidersHorizontal, Tag, UserCheck, Users,
 } from '@/components/ui/icons';
 
 export const REGISTRE = [
@@ -61,7 +61,13 @@ export const REGISTRE = [
     description: 'Frais de scolarité, paie et journal des opérations.',
     icone: BarChart3,
     chemin: '/finance',
-    menu: [],
+    menu: [
+      { chemin: 'tableau-de-bord', libelle: 'Tableau de bord', icone: BarChart3 },
+      { chemin: 'frais', libelle: 'Frais étudiants', icone: GraduationCap },
+      { chemin: 'paie-enseignants', libelle: 'Paie des enseignants', icone: BookOpen },
+      { chemin: 'paie-personnel', libelle: 'Paie du personnel', icone: Users },
+      { chemin: 'journal', libelle: 'Journal', icone: List },
+    ],
   },
   {
     code: 'logistique',
@@ -83,6 +89,7 @@ export const REGISTRE = [
       { chemin: 'enseignement', libelle: 'Enseignements', icone: BookOpen },
       { chemin: 'personnes', libelle: 'Personnes', icone: Users },
       { chemin: 'utilisateurs', libelle: 'Utilisateurs et droits', icone: UserCheck },
+      { chemin: 'tarifs', libelle: 'Tarifs', icone: Tag },
       { chemin: 'etablissement', libelle: 'Établissement', icone: SlidersHorizontal },
       { chemin: 'audit', libelle: 'Journal d’audit', icone: FileText },
     ],
