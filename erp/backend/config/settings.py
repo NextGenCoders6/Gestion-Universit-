@@ -110,6 +110,22 @@ FRONTEND_DIST = BASE_DIR / 'frontend_dist'
 # Adresse publique de l'ERP : les QR codes des documents officiels pointent vers {BASE_URL}/verifier/<jeton>.
 BASE_URL = config('BASE_URL', default='http://localhost:8000').rstrip('/')
 
+# Derrière un frontal (nginx de la pile Docker) : origines admises pour les formulaires de l'administration,
+# et prise en compte du HTTPS terminé par le frontal.
+CSRF_TRUSTED_ORIGINS = config('CSRF_TRUSTED_ORIGINS', default='', cast=Csv())
+if config('DERRIERE_HTTPS', default=False, cast=bool):
+    SECURE_PROXY_SSL_HEADER = ('HTTP_X_FORWARDED_PROTO', 'https')
+    SESSION_COOKIE_SECURE = True
+    CSRF_COOKIE_SECURE = True
+
+# Erreurs et avertissements dans la sortie standard (journaux du conteneur), même hors DEBUG.
+LOGGING = {
+    'version': 1,
+    'disable_existing_loggers': False,
+    'handlers': {'console': {'class': 'logging.StreamHandler'}},
+    'root': {'handlers': ['console'], 'level': 'WARNING'},
+}
+
 CORS_ALLOWED_ORIGINS = config(
     'CORS_ALLOWED_ORIGINS', default='http://localhost:5173,http://127.0.0.1:5173', cast=Csv()
 )

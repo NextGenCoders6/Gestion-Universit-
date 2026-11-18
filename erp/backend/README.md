@@ -35,6 +35,14 @@ et une M1, ~10 enseignants permanents et vacataires, 10 employés dont 2 chauffe
 notes et une délibération, des séances, des tarifs à 1 500 000 FCFA en 10 mensualités, des paiements,
 la paie d'octobre, 3 bus, 3 trajets et des dépenses de transport.
 
+## Docker
+
+Pile complète (MySQL, Django avec gunicorn, nginx) : voir [`../docker/README.md`](../docker/README.md).
+
+```bash
+cd erp && cp .env.example .env && docker compose up -d --build   # → http://localhost:8080
+```
+
 ## Tests
 
 ```bash
