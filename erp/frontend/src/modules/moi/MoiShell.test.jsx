@@ -12,6 +12,7 @@ vi.mock('./api', () => ({
   mesNotes: vi.fn(() => Promise.resolve({ matricule: 'M', inscriptions: [] })),
   monPlanningEtudiant: vi.fn(() => Promise.resolve([])),
   mesEnseignants: vi.fn(() => Promise.resolve([])),
+  mesFrais: vi.fn(() => Promise.resolve([])),
 }));
 vi.mock('@/modules/edt/components/PlanningGrid', () => ({ default: () => <div>grille</div> }));
 
@@ -48,7 +49,7 @@ describe('Mon espace', () => {
     connecter(['etudiant']);
     rendre('/moi');
     expect((await screen.findAllByRole('heading', { name: 'Mes notes' })).length).toBeGreaterThan(0);
-    for (const nom of ['Mes notes', 'Mon planning', 'Mes enseignants']) {
+    for (const nom of ['Mes notes', 'Mon planning', 'Mes enseignants', 'Mes frais']) {
       expect(screen.getAllByRole('link', { name: nom }).length).toBeGreaterThan(0);
     }
     expect(screen.queryByRole('link', { name: 'Mes documents' })).not.toBeInTheDocument();

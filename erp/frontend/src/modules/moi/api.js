@@ -25,3 +25,14 @@ export async function telechargerDocument(doc) {
 export const mesNotes = () => apiClient.get('/scolarite/moi/notes/').then(donnees);
 export const monPlanningEtudiant = (params = {}) => apiClient.get('/scolarite/moi/planning/', { params }).then(donnees);
 export const mesEnseignants = () => apiClient.get('/scolarite/moi/enseignants/').then(donnees);
+export const mesFrais = () => apiClient.get('/scolarite/moi/frais/').then(donnees);
+
+export async function telechargerRecu(paiement) {
+  const r = await apiClient.get(`/scolarite/moi/frais/paiements/${paiement.id}/recu.pdf`, { responseType: 'blob', timeout: 120_000 });
+  const url = URL.createObjectURL(r.data);
+  const lien = document.createElement('a');
+  lien.href = url;
+  lien.download = `recu-${paiement.numero}.pdf`;
+  lien.click();
+  setTimeout(() => URL.revokeObjectURL(url), 1000);
+}

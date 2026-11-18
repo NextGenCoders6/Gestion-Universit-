@@ -1,12 +1,13 @@
 /** « Mon espace » : même layout qu'un module, menu selon les rôles de la personne. */
 import { Navigate, Route, Routes } from 'react-router-dom';
-import { BookOpen, CalendarDays, FileText, GraduationCap, UserCircle, Users } from '@/components/ui/icons';
+import { BookOpen, CalendarDays, FileText, GraduationCap, Tag, UserCircle, Users } from '@/components/ui/icons';
 import ModuleShell from '@/app/ModuleShell';
 import Introuvable from '@/app/pages/Introuvable';
 import useAuthStore, { aRole } from '@/store/authStore';
 import MesDocuments from './pages/MesDocuments';
 import MesEnseignants from './pages/MesEnseignants';
 import MesEnseignements from './pages/MesEnseignements';
+import MesFrais from './pages/MesFrais';
 import MesNotes from './pages/MesNotes';
 import MonPlanning from './pages/MonPlanning';
 import MonPlanningEtudiant from './pages/MonPlanningEtudiant';
@@ -21,6 +22,7 @@ const MENU_ETUDIANT = [
   { chemin: 'notes', libelle: 'Mes notes', icone: GraduationCap, element: <MesNotes /> },
   { chemin: 'planning', libelle: 'Mon planning', icone: CalendarDays, element: <MonPlanningEtudiant /> },
   { chemin: 'enseignants', libelle: 'Mes enseignants', icone: Users, element: <MesEnseignants /> },
+  { chemin: 'frais', libelle: 'Mes frais', icone: Tag, element: <MesFrais /> },
 ];
 
 function EnAttente() {

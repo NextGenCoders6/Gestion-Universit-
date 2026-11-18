@@ -57,6 +57,11 @@ export default function MesNotes() {
       {(notes.data?.inscriptions ?? []).map((i) => (
         <div key={i.inscription} className="space-y-3">
           <h2 className="text-lg font-semibold">{i.classe}</h2>
+          {i.resultats_masques && (
+            <p role="status" className="rounded-md bg-amber-50 px-3 py-2 text-sm text-amber-900 dark:bg-amber-900/20 dark:text-amber-100">
+              {i.message_resultats}
+            </p>
+          )}
           <div className="grid gap-3 xl:grid-cols-2">
             {i.semestres.map((s) => <Semestre key={s.semestre} s={s} />)}
           </div>
