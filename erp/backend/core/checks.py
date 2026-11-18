@@ -14,3 +14,17 @@ def verifier_cle_secrete(app_configs, **kwargs):
             id='core.E001',
         )]
     return []
+
+
+@register()
+def verifier_base_url(app_configs, **kwargs):
+    """Hors DEBUG, les QR codes des documents officiels pointeraient vers une adresse locale."""
+    from django.core.checks import Warning as Avertissement
+    base = getattr(settings, 'BASE_URL', '')
+    if not settings.DEBUG and any(x in base for x in ('localhost', '127.0.0.1', '[::1]')):
+        return [Avertissement(
+            f'BASE_URL vaut « {base} » alors que DEBUG=False : les QR codes des documents pointeront vers cette adresse.',
+            hint='Définissez BASE_URL dans le fichier .env avec l’adresse publique de l’ERP.',
+            id='core.W002',
+        )]
+    return []

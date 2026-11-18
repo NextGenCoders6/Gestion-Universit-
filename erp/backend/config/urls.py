@@ -23,6 +23,7 @@ urlpatterns = [
     path('api/logistique/', include('logistique.urls')),
     # Page publique ouverte par le QR code des documents officiels (hors SPA).
     path('verifier/<str:jeton>', verifier_document, name='verifier_document'),
+    path('verifier/<str:jeton>/', verifier_document),
 ] + static(settings.MEDIA_URL, document_root=settings.MEDIA_ROOT) + [
     # Fichiers du build de l'interface (Vite : base « / »).
     re_path(r'^(?P<chemin>assets/.+|favicon\.svg|icons\.svg)$', fichier_frontend),

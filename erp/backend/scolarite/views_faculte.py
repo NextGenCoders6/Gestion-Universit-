@@ -2,7 +2,7 @@
 from decimal import Decimal, InvalidOperation
 
 from django.core.exceptions import ValidationError as DjangoValidationError
-from django.db import transaction
+from django.db import IntegrityError, transaction
 from django.db.models import Q
 from django.http import HttpResponse
 from django.shortcuts import get_object_or_404
@@ -251,9 +251,23 @@ def _inscriptions_de(classe, ids):
             .filter(etudiant_id__in=ids).select_related('etudiant__personne')}
 
 
+def _motif_refus(inscription):
+    """Un étudiant diplômé, qui a abandonné, ou dont l'inscription est close ne passe pas (même via l'API)."""
+    nom = inscription.etudiant.personne.nom_complet
+    if inscription.etudiant.statut != 'actif':
+        return f"{nom} n'est plus étudiant actif ({inscription.etudiant.get_statut_display().split(' —')[0].lower()})."
+    if inscription.statut != 'active':
+        return f"{nom} : l'inscription de cette année est close."
+    return None
+
+
 def _passer(inscription, cible, suivante, ignores):
     """Inscrit l'étudiant dans `cible` et clôt son inscription ; ajoute à `ignores` sinon. Renvoie True si fait."""
     nom = inscription.etudiant.personne.nom_complet
+    refus = _motif_refus(inscription)
+    if refus and not Inscription.objects.filter(etudiant_id=inscription.etudiant_id, annee=suivante).exists():
+        ignores.append({'etudiant': inscription.etudiant_id, 'nom_complet': nom, 'motif': refus})
+        return False
     if Inscription.objects.filter(etudiant_id=inscription.etudiant_id, annee=suivante).exists():
         ignores.append({'etudiant': inscription.etudiant_id, 'nom_complet': nom,
                         'motif': f"{nom} est déjà inscrit pour l'année suivante."})
@@ -264,10 +278,16 @@ def _passer(inscription, cible, suivante, ignores):
         ignores.append({'etudiant': inscription.etudiant_id, 'nom_complet': nom,
                         'motif': f"{nom} : résultats non délibérés pour {', '.join(manquants)}."})
         return False
-    with transaction.atomic():
-        inscrire(inscription.etudiant, cible, type='reinscription')
-        inscription.statut = 'terminee'
-        inscription.save()
+    try:
+        with transaction.atomic():
+            inscrire(inscription.etudiant, cible, type='reinscription')
+            inscription.statut = 'terminee'
+            inscription.save()
+    except (DjangoValidationError, IntegrityError) as exc:
+        # Une erreur sur un étudiant (année cible archivée, double envoi…) n'arrête pas les autres.
+        messages = getattr(exc, 'messages', None) or [str(exc)]
+        ignores.append({'etudiant': inscription.etudiant_id, 'nom_complet': nom, 'motif': f"{nom} : {' '.join(messages)}"})
+        return False
     return True
 
 
@@ -327,6 +347,7 @@ class PromotionView(APIView):
 
     def post(self, request):
         classe = classe_demandee(request, request.data.get('classe'))
+        refuser_si_archivee(classe.annee)
         suivante, cible = _cible_promotion(classe)
         ids = _ids(request.data.get('etudiants') or [])
         inscriptions = _inscriptions_de(classe, ids)
@@ -359,6 +380,7 @@ class OrientationView(APIView):
 
     def post(self, request):
         classe = self._classe_l1(request, request.data.get('classe'))
+        refuser_si_archivee(classe.annee)
         suivante = annee_suivante(classe.annee)
         if suivante is None:
             raise ValidationError({'detail': f"L'année suivant {classe.annee.libelle} n'est pas encore créée."})

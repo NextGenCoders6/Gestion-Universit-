@@ -91,7 +91,8 @@ class EtudiantViewSet(mixins.ListModelMixin, mixins.RetrieveModelMixin, mixins.C
         etudiant.save()
         statut_inscription = STATUT_INSCRIPTION.get(etudiant.statut)
         if statut_inscription:
-            for inscription in etudiant.inscriptions.filter(statut='active'):
+            # Une année archivée est figée : ses inscriptions ne changent plus.
+            for inscription in etudiant.inscriptions.filter(statut='active').exclude(annee__statut='archivee'):
                 inscription.statut = statut_inscription
                 inscription.save()
         journaliser(request, 'scolarite', 'statut_etudiant', f'{etudiant.matricule} → {etudiant.statut}')
@@ -121,6 +122,8 @@ class InscriptionViewSet(mixins.ListModelMixin, mixins.RetrieveModelMixin, mixin
     @transaction.atomic
     def perform_update(self, serializer):
         inscription = serializer.instance
+        if inscription.annee.statut == 'archivee':
+            raise ValidationError({'detail': "L'année est archivée : l'inscription ne peut plus changer."})
         classe = serializer.validated_data.get('classe', inscription.classe)
         if classe.pk == inscription.classe_id:
             serializer.save()
