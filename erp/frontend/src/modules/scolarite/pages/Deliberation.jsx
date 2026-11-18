@@ -7,7 +7,7 @@ import { useToast } from '@/hooks/use-toast';
 import { confirmer } from '@/lib/confirmer';
 import { erreursServeur } from '@/lib/erreurs';
 import * as api from '../api';
-import Selecteur from '../components/Selecteur';
+import Selecteur from '@/components/shared/Selecteur';
 import { useClasses, useSelection } from '../hooks';
 import { couleurDecision, note, optionsClasses } from '../lib/format';
 

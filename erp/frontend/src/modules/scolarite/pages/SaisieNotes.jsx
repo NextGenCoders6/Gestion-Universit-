@@ -8,7 +8,7 @@ import PageHeader from '@/components/shared/PageHeader';
 import { useToast } from '@/hooks/use-toast';
 import { erreursServeur } from '@/lib/erreurs';
 import * as api from '../api';
-import Selecteur from '../components/Selecteur';
+import Selecteur from '@/components/shared/Selecteur';
 import { useClasses, useSelection } from '../hooks';
 import { note, optionsClasses } from '../lib/format';
 

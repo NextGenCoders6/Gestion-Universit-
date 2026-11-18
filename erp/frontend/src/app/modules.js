@@ -9,7 +9,7 @@
  *        `niveaux` absent = visible pour tout niveau du module.
  */
 import {
-  ArrowRightCircle, BarChart3, BookOpen, CalendarDays, FileSpreadsheet, FileText, GraduationCap, Layers, List, MapPin,
+  ArrowRightCircle, BarChart3, BookOpen, CalendarDays, Clock, FileSpreadsheet, FileText, GraduationCap, Layers, List, MapPin,
   Pencil, School, SlidersHorizontal, UserCheck, Users,
 } from '@/components/ui/icons';
 
@@ -46,7 +46,13 @@ export const REGISTRE = [
     description: 'Enseignants, personnel, contrats et vacations.',
     icone: Users,
     chemin: '/rh',
-    menu: [],
+    menu: [
+      { chemin: 'tableau-de-bord', libelle: 'Tableau de bord', icone: BarChart3 },
+      { chemin: 'enseignants', libelle: 'Enseignants', icone: GraduationCap },
+      { chemin: 'personnel', libelle: 'Personnel', icone: Users },
+      { chemin: 'contrats', libelle: 'Contrats', icone: FileText },
+      { chemin: 'vacations', libelle: 'Vacations', icone: Clock },
+    ],
   },
   {
     code: 'finance',
