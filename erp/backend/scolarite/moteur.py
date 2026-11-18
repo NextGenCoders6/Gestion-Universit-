@@ -7,6 +7,7 @@
 4. Un EC sans note saisie est ignoré du calcul (il n'est pas compté 0).
 """
 from collections import defaultdict
+from decimal import Decimal
 
 from django.db import transaction
 from django.utils import timezone
@@ -126,7 +127,7 @@ def enregistrer_resultats(lignes, semestre, par=None):
         ResultatSemestre.objects.update_or_create(
             inscription=ligne['inscription'], semestre=semestre,
             defaults={
-                'moyenne': ligne['moyenne'], 'credits_obtenus': ligne['credits_valides'],
+                'moyenne': Decimal(str(ligne['moyenne'])), 'credits_obtenus': ligne['credits_valides'],
                 'credits_totaux': ligne['credits_totaux'], 'decision': ligne['decision'],
                 'mention': ligne['mention'], 'rang': ligne['rang'],
                 'delibere_le': maintenant, 'delibere_par': par,

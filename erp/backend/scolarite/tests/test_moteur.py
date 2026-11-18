@@ -118,3 +118,10 @@ class DeliberationTests(Base):
         with CaptureQueriesContext(connection) as apres:
             self.assertEqual(len(deliberation(self.m.l1, 'S1')), 7)
         self.assertEqual(len(apres), len(avant))
+
+
+class EnregistrementMoyenneSousDixTests(Base):
+    def test_moyenne_a_un_chiffre(self):
+        i = self.eleve('Ajour', 'abs', (10, 10), (12, 12))   # moyenne 7.8
+        deliberation(self.m.l1, 'S1', enregistrer=True)
+        self.assertEqual(str(ResultatSemestre.objects.get(inscription=i).moyenne), '7.80')
