@@ -113,7 +113,7 @@ class Operation(models.Model):
     """Ligne du journal (reprise de Transaction) : jamais supprimée, corrigée par contre-écriture."""
 
     CATEGORIES = [('frais', 'Frais de scolarité'), ('salaire', 'Salaire'), ('vacation', 'Vacation'),
-                  ('manuelle', 'Opération manuelle'), ('annulation', 'Annulation')]
+                  ('transport', 'Transport'), ('manuelle', 'Opération manuelle'), ('annulation', 'Annulation')]
 
     numero = models.CharField(max_length=20, unique=True)
     date = models.DateField()
@@ -198,4 +198,23 @@ class PaiementPaie(models.Model):
     created_at = models.DateTimeField(auto_now_add=True)
 
     class Meta:
+        ordering = ['-date', '-pk']
+
+
+class DepenseTransport(models.Model):
+    TYPES = [('carburant', 'Carburant'), ('entretien', 'Entretien'), ('reparation', 'Réparation')]
+
+    bus = models.ForeignKey('logistique.Bus', on_delete=models.PROTECT, related_name='depenses')
+    type = models.CharField(max_length=12, choices=TYPES)
+    montant = models.DecimalField(max_digits=12, decimal_places=2)
+    description = models.CharField(max_length=255, blank=True)
+    date = models.DateField()
+    operation = models.OneToOneField(Operation, on_delete=models.PROTECT, related_name='depense_transport')
+    annule = models.BooleanField(default=False)
+    motif_annulation = models.CharField(max_length=255, blank=True)
+    par = models.ForeignKey('auth.User', on_delete=models.SET_NULL, null=True, blank=True, related_name='+')
+    created_at = models.DateTimeField(auto_now_add=True)
+
+    class Meta:
+        verbose_name = 'Dépense de transport'
         ordering = ['-date', '-pk']
