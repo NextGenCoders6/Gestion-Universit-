@@ -426,6 +426,13 @@ class TransportViewSet(viewsets.ViewSet):
         journaliser(request, 'finance', 'depense_transport', f'{d.operation.numero} — {d.operation.libelle} : {d.montant}')
         return Response(depense_json(d), status=status.HTTP_201_CREATED)
 
+    @action(detail=False, methods=['get'])
+    def bus(self, request):
+        """Bus proposés à la saisie d'une dépense (la Finance n'a pas accès au module Logistique)."""
+        from logistique.models import Bus
+        return Response([{'id': b.pk, 'numero': b.numero, 'plaque': b.plaque, 'statut': b.statut}
+                         for b in Bus.objects.order_by('numero')])
+
     @action(detail=True, methods=['post'], permission_classes=[ResponsableFinance])
     def annuler(self, request, pk=None):
         from finance import transports

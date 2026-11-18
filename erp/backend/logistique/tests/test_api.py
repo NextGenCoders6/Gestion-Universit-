@@ -117,3 +117,11 @@ class CoutsEtTransportsTests(Base):
         r = self.fin.post(f"/api/finance/transports/{dep['id']}/annuler/", {'motif': 'Doublon'}, format='json')
         self.assertEqual(r.status_code, 200, r.data)
         self.assertEqual(self.util.get('/api/logistique/couts/').data['total'], 0.0)
+
+
+class BusPourLaFinanceTests(Base):
+    def test_la_finance_liste_les_bus(self):
+        r = self.fin_u.get('/api/finance/transports/bus/')
+        self.assertEqual(r.status_code, 200, r.data)
+        self.assertEqual([b['numero'] for b in r.data], ['01'])
+        self.assertEqual(self.autre.get('/api/finance/transports/bus/').status_code, 403)
