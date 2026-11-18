@@ -57,4 +57,14 @@ describe('Logistique', () => {
     await waitFor(() => expect(api.creerAffectation).toHaveBeenCalled());
     expect(await dialog.findByText('Ce chauffeur conduit déjà un bus sur cette période.')).toBeInTheDocument();
   });
+
+  it('annule une affectation à venir', async () => {
+    api.listerAffectations.mockResolvedValue({ count: 1, results: [{ id: 9, bus: 1, bus_numero: '01', chauffeur: 7,
+      chauffeur_nom: 'MALONGA Jean', trajet: 2, trajet_nom: 'Ligne A', date_debut: '2099-01-01', date_fin: null, active: false, a_venir: true }] });
+    api.annulerAffectation.mockResolvedValue({});
+    const user = userEvent.setup();
+    rendre(<Affectations />, ['responsable']);
+    await user.click(await screen.findByRole('button', { name: 'Annuler' }));
+    await waitFor(() => expect(api.annulerAffectation).toHaveBeenCalledWith(9));
+  });
 });

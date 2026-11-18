@@ -30,13 +30,17 @@ class AffectationSerializer(serializers.ModelSerializer):
     chauffeur_nom = serializers.CharField(source='chauffeur.personne.nom_complet', read_only=True)
     trajet_nom = serializers.CharField(source='trajet.nom', read_only=True)
     active = serializers.SerializerMethodField()
+    a_venir = serializers.SerializerMethodField()
     chauffeur = serializers.PrimaryKeyRelatedField(queryset=Employe.objects.all())
 
     class Meta:
         model = AffectationTransport
         fields = ['id', 'bus', 'bus_numero', 'chauffeur', 'chauffeur_nom', 'trajet', 'trajet_nom', 'date_debut',
-                  'date_fin', 'active']
+                  'date_fin', 'active', 'a_venir']
         read_only_fields = ['date_fin']
 
     def get_active(self, obj):
         return obj.est_active(timezone.localdate())
+
+    def get_a_venir(self, obj):
+        return obj.date_debut > timezone.localdate()

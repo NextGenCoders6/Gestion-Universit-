@@ -10,7 +10,7 @@ import FormModal from '@/components/shared/FormModal';
 import PageHeader from '@/components/shared/PageHeader';
 import { Tabs, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { useToast } from '@/hooks/use-toast';
-import { erreursServeur } from '@/lib/erreurs';
+import { erreursServeur, messageErreur } from '@/lib/erreurs';
 import * as api from '../api';
 import Formulaire from '../Formulaire';
 import { useEstResponsableLogistique } from '../hooks';
@@ -79,8 +79,14 @@ export default function Affectations() {
             {lignes.map((a) => (
               <tr key={a.id} className="border-t border-border">
                 <td className="px-3 py-1.5 font-medium">Bus {a.bus_numero}</td><td className="px-3 py-1.5">{a.chauffeur_nom}</td><td className="px-3 py-1.5">{a.trajet_nom}</td>
-                <td className="px-3 py-1.5 text-center">{dateFr(a.date_debut)} → {a.date_fin ? dateFr(a.date_fin) : '…'} {a.active && <Badge variant="secondary">en cours</Badge>}</td>
-                <td className="px-2 py-1.5 text-right">{responsable && a.active && <Button size="sm" variant="ghost" onClick={() => setDialogue({ terminer: a })}>Terminer</Button>}</td>
+                <td className="px-3 py-1.5 text-center">{dateFr(a.date_debut)} → {a.date_fin ? dateFr(a.date_fin) : '…'} {a.active && <Badge variant="secondary">en cours</Badge>}{a.a_venir && <Badge variant="outline">à venir</Badge>}</td>
+                <td className="px-2 py-1.5 text-right">
+                  {responsable && a.active && <Button size="sm" variant="ghost" onClick={() => setDialogue({ terminer: a })}>Terminer</Button>}
+                  {responsable && a.a_venir && <Button size="sm" variant="ghost" className="text-destructive" onClick={async () => {
+                    try { await api.annulerAffectation(a.id); rafraichir(); toast({ title: 'Affectation annulée' }); }
+                    catch (e) { toast({ title: 'Annulation impossible', description: messageErreur(e), variant: 'destructive' }); }
+                  }}>Annuler</Button>}
+                </td>
               </tr>
             ))}
           </tbody>

@@ -72,13 +72,19 @@ class AffectationTransport(ModeleValide):
         erreurs = {}
         if self.date_fin and self.date_fin < self.date_debut:
             erreurs['date_fin'] = 'La date de fin précède la date de début.'
-        if self.chauffeur.fonction != 'chauffeur':
+        avant = None if self._state.adding else AffectationTransport.objects.filter(pk=self.pk).values(
+            'bus_id', 'chauffeur_id', 'date_debut').first()
+        # Les règles d'attribution (chauffeur, contrat, bus actif) valent à la création ou si l'attribution change ;
+        # terminer une affectation reste toujours possible (chauffeur muté, contrat raccourci…).
+        nouvelle = avant is None or avant != {'bus_id': self.bus_id, 'chauffeur_id': self.chauffeur_id,
+                                              'date_debut': self.date_debut}
+        if nouvelle and self.chauffeur.fonction != 'chauffeur':
             erreurs['chauffeur'] = "Cet employé n'est pas chauffeur."
-        else:
+        elif nouvelle:
             from rh.contrats import contrat_en_cours
             if contrat_en_cours(self.chauffeur.personne, self.date_debut) is None:
                 erreurs['chauffeur'] = "Ce chauffeur n'a pas de contrat en cours à la date de début."
-        if self._state.adding and self.bus.statut != 'actif':
+        if nouvelle and self.bus.statut != 'actif':
             erreurs['bus'] = f'Ce bus est {self.bus.get_statut_display().lower()} : il ne peut pas être affecté.'
         if erreurs:
             raise ValidationError(erreurs)

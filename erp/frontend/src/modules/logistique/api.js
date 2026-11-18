@@ -15,6 +15,7 @@ export const modifierTrajet = (id, d) => apiClient.patch(`/logistique/trajets/${
 export const supprimerTrajet = (id) => apiClient.delete(`/logistique/trajets/${id}/`);
 export const listerAffectations = (params = {}) => apiClient.get('/logistique/affectations/', { params }).then(donnees);
 export const creerAffectation = (d) => apiClient.post('/logistique/affectations/', d).then(donnees);
+export const annulerAffectation = (id) => apiClient.post(`/logistique/affectations/${id}/annuler/`);
 export const terminerAffectation = (id, dateFin) => apiClient.post(`/logistique/affectations/${id}/terminer/`, { date_fin: dateFin }).then(donnees);
 export const chauffeursDisponibles = (date) => apiClient.get('/logistique/chauffeurs/', { params: date ? { date } : {} }).then(donnees);
 export const couts = (params = {}) => apiClient.get('/logistique/couts/', { params }).then(donnees);

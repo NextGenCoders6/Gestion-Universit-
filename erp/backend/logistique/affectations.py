@@ -14,9 +14,22 @@ def actives(jour):
 
 
 def terminer(affectation, jour=None):
-    affectation.date_fin = jour or timezone.localdate()
+    aujourdhui = timezone.localdate()
+    jour = jour or aujourdhui
+    if affectation.date_debut > aujourdhui:
+        raise ValidationError("Cette affectation n'a pas encore commencé : annulez-la plutôt.")
+    if affectation.date_fin is not None and affectation.date_fin < aujourdhui:
+        raise ValidationError('Cette affectation est déjà terminée : sa date de fin ne change plus.')
+    affectation.date_fin = jour
     affectation.save()
     return affectation
+
+
+def annuler(affectation):
+    """Supprime une affectation qui n'a pas encore commencé (erreur de saisie, bus mis en maintenance…)."""
+    if affectation.date_debut <= timezone.localdate():
+        raise ValidationError('Cette affectation a commencé : terminez-la plutôt.')
+    affectation.delete()
 
 
 @transaction.atomic
@@ -29,19 +42,24 @@ def changer_statut(bus, statut, jour=None, par=None):
     terminees = []
     if statut != 'actif':
         for a in actives(jour).filter(bus=bus):
-            terminees.append(terminer(a, max(jour, a.date_debut)))
+            a.date_fin = max(jour, a.date_debut)
+            a.save()
+            terminees.append(a)
+        for a in AffectationTransport.objects.filter(bus=bus, date_debut__gt=jour):
+            terminees.append(a)
+            a.delete()   # pas encore commencée : annulée
     bus.statut = statut
     bus.save()
     return bus, terminees
 
 
 def chauffeurs_disponibles(jour=None):
-    """Chauffeurs avec un contrat en cours et sans affectation active ce jour-là."""
+    """Chauffeurs avec un contrat en cours, sans affectation ce jour-là ni ensuite (une nouvelle n'a pas de fin)."""
     from rh.contrats import q_en_cours
     from rh.models import Contrat
     jour = jour or timezone.localdate()
     sous_contrat = Contrat.objects.filter(q_en_cours(jour)).values('personne_id')
-    occupes = actives(jour).values('chauffeur_id')
+    occupes = AffectationTransport.objects.filter(Q(date_fin__isnull=True) | Q(date_fin__gte=jour)).values('chauffeur_id')
     return (Employe.objects.filter(fonction='chauffeur', pk__in=sous_contrat).exclude(pk__in=occupes)
             .select_related('personne').order_by('personne__nom', 'personne__prenom'))
 

@@ -79,6 +79,14 @@ class AffectationViewSet(mixins.ListModelMixin, mixins.RetrieveModelMixin, mixin
         journaliser(self.request, 'logistique', 'affectation', f'{a} à partir du {a.date_debut:%d/%m/%Y}')
 
     @action(detail=True, methods=['post'])
+    def annuler(self, request, pk=None):
+        a = self.get_object()
+        description = str(a)
+        service.annuler(a)
+        journaliser(request, 'logistique', 'annulation_affectation', description)
+        return Response(status=204)
+
+    @action(detail=True, methods=['post'])
     def terminer(self, request, pk=None):
         a = service.terminer(self.get_object(), _date(request.data.get('date_fin'), 'date_fin'))
         journaliser(request, 'logistique', 'fin_affectation', f'{a} au {a.date_fin:%d/%m/%Y}')

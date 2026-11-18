@@ -50,5 +50,6 @@ class Command(BaseCommand):
             par = User.objects.filter(username='finance_responsable').first()
             for numero, type_, montant, jour, description in DEPENSES:
                 if not DepenseTransport.objects.filter(bus=bus[numero], date=jour, type=type_).exists():
-                    transports.enregistrer(bus[numero], type_, montant, date=jour, description=description, par=par)
+                    transports.enregistrer(bus[numero], type_, montant, date=jour, description=description, par=par,
+                                           historique=True)
         self.stdout.write(self.style.SUCCESS('Logistique de démonstration prête (3 bus, 3 trajets, 2 affectations).'))

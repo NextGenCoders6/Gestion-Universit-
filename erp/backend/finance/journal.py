@@ -29,12 +29,14 @@ def date_minimale(aujourdhui):
     return aujourdhui.replace(year=debut_annee - 1, month=9, day=1)
 
 
-def date_valide(jour, champ='date'):
+def date_valide(jour, champ='date', historique=False):
+    """Pas de date future ; pas plus ancienne que l'année académique précédente, sauf écriture
+    historique (données de démonstration datées de leur année)."""
     aujourdhui = timezone.localdate()
     jour = jour or aujourdhui
     if jour > aujourdhui:
         raise ValidationError({champ: 'La date ne peut pas être dans le futur.'})
-    if jour < date_minimale(aujourdhui):
+    if not historique and jour < date_minimale(aujourdhui):
         raise ValidationError({champ: f'La date ne peut pas précéder le {date_minimale(aujourdhui):%d/%m/%Y}.'})
     return jour
 

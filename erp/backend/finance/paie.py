@@ -59,10 +59,10 @@ def libelle_paie(p):
 
 
 @transaction.atomic
-def payer(paie, montant, mode, *, date=None, reference='', par=None):
+def payer(paie, montant, mode, *, date=None, reference='', par=None, historique=False):
     montant = journal.montant_valide(montant)
     mode = journal.mode_valide(mode)
-    jour = journal.date_valide(date)
+    jour = journal.date_valide(date, historique=historique)
     paie = Paie.objects.select_for_update().select_related(
         'personne', 'vacation__affectation__ec', 'vacation__affectation__classe').get(pk=paie.pk)
     if paie.reste <= 0:

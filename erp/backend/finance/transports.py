@@ -11,11 +11,11 @@ from finance.models import DepenseTransport
 
 
 @transaction.atomic
-def enregistrer(bus, type, montant, *, date=None, description='', par=None):
+def enregistrer(bus, type, montant, *, date=None, description='', par=None, historique=False):
     montant = journal.montant_valide(montant)
     if type not in dict(DepenseTransport.TYPES):
         raise ValidationError({'type': 'Type de dépense invalide.'})
-    jour = journal.date_valide(date)
+    jour = journal.date_valide(date, historique=historique)
     libelle = f'Transport — {dict(DepenseTransport.TYPES)[type]} — {bus}'
     if description:
         libelle += f' ({description})'
