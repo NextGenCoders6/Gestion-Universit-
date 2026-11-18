@@ -23,6 +23,7 @@ Pour un essai rapide sans MySQL, mettre `DB_ENGINE=sqlite` dans `.env`.
 ```bash
 .venv/bin/python manage.py migrate
 .venv/bin/python manage.py seed_socle
+.venv/bin/python manage.py seed_edt      # emploi du temps de démonstration
 .venv/bin/python manage.py runserver
 ```
 
@@ -31,7 +32,7 @@ Pour un essai rapide sans MySQL, mettre `DB_ENGINE=sqlite` dans `.env`.
 ## Tests
 
 ```bash
-DB_ENGINE=sqlite .venv/bin/python manage.py test core
+DB_ENGINE=sqlite .venv/bin/python manage.py test core edt
 ```
 
 ## Comptes de démonstration
@@ -48,7 +49,9 @@ Mot de passe commun : `Uccb!2026demo` — valeur de démonstration, à changer h
 | `rh_utilisateur`, `rh_responsable` | Ressources humaines |
 | `finance_utilisateur`, `finance_responsable` | Finance |
 | `logistique_utilisateur`, `logistique_responsable` | Logistique |
-| `chef` | enseignant chef du département Informatique (aucun module) |
+| `chef` | enseignant chef du département Informatique : gère l'EDT de la L2 INFO |
+| `referent` | enseignant référent des L1 MIP et BCG (après `seed_edt`) |
+| `enseignant` | enseignante (Mon espace : planning, enseignements, documents ; après `seed_edt`) |
 | `employe` | gardien, sans aucun droit |
 
 ## Droits
