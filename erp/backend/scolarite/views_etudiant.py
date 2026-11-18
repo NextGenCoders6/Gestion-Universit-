@@ -19,6 +19,7 @@ from edt.models import AffectationEC, Seance
 from edt.serializers import SeanceSerializer
 from edt.validation import q_jour_effectif
 from edt.views import RELATIONS_SEANCE, _date
+from scolarite.inscriptions import MOTIFS_MASQUAGE_RESULTATS
 from scolarite.moteur import ligne_etudiant
 from scolarite.serialisation import ligne_json, resultat_json
 
@@ -113,19 +114,21 @@ class MesNotesView(APIView):
         donnees = []
         for inscription in etudiant.inscriptions.exclude(statut='abandonnee').select_related(
                 'classe__parcours', 'annee', 'etudiant__personne'):
-            resultats = {r.semestre: r for r in inscription.resultats.all()}
+            motif = next((m for m in (f(inscription) for f in MOTIFS_MASQUAGE_RESULTATS) if m), None)
+            resultats = {} if motif else {r.semestre: r for r in inscription.resultats.all()}
+            delibere = {r.semestre for r in inscription.resultats.all()}
             semestres = []
             for semestre in inscription.classe.semestres:
                 ligne = ligne_json(ligne_etudiant(inscription, semestre))
                 resultat = resultats.get(semestre)
-                semestres.append({'semestre': semestre, 'deliberee': resultat is not None,
+                semestres.append({'semestre': semestre, 'deliberee': semestre in delibere,
                                   'resultat': resultat_json(resultat), 'ues': [
                                       {k: v for k, v in ue.items() if k not in ('moyenne_ue', 'validee')}
                                       | ({'moyenne_ue': ue['moyenne_ue'], 'validee': ue['validee']} if resultat else {})
                                       for ue in ligne['ues']]})
             donnees.append({'inscription': inscription.pk, 'annee': inscription.annee.libelle,
                             'classe': inscription.classe.libelle, 'statut': inscription.statut,
-                            'semestres': semestres})
+                            'resultats_masques': bool(motif), 'message_resultats': motif, 'semestres': semestres})
         return Response({'matricule': etudiant.matricule, 'inscriptions': donnees})
 
 

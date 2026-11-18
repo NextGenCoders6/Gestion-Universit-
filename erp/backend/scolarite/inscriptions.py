@@ -7,6 +7,10 @@ from scolarite.models import Inscription, Note
 # Rappels appelés après chaque inscription (la Finance y branchera la facturation en phase 5).
 APRES_INSCRIPTION = []
 
+# Fonctions (inscription) → message ou None : un message masque à l'étudiant moyennes et décisions de cette
+# inscription (la Finance y branche les mensualités échues non payées).
+MOTIFS_MASQUAGE_RESULTATS = []
+
 
 @transaction.atomic
 def inscrire(etudiant, classe, *, type, date=None):

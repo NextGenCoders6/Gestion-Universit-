@@ -158,3 +158,15 @@ def creer_dossiers_manquants():
     from scolarite.models import Inscription
     manquantes = Inscription.objects.filter(frais__isnull=True).select_related('classe', 'annee')
     return sum(1 for i in manquantes if creer_dossier(i))
+
+
+def motif_masquage_resultats(inscription):
+    """Branché sur scolarite.inscriptions.MOTIFS_MASQUAGE_RESULTATS (décision 4) : retard ⇒ résultats masqués."""
+    dossier = FraisScolarite.objects.filter(inscription=inscription).prefetch_related('echeances').first()
+    if dossier is None:
+        return None
+    retard = montant_en_retard(dossier, echeances=list(dossier.echeances.all()))
+    if retard <= 0:
+        return None
+    return (f'Vos moyennes et décisions de {inscription.annee.libelle} s’afficheront quand votre mensualité échue '
+            f'sera réglée (reste à régler : {retard:,.0f} FCFA).'.replace(',', ' '))

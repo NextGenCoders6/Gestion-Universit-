@@ -18,3 +18,8 @@ class FinanceConfig(AppConfig):
             vacations.APRES_CONFIRMATION.append(creer_ligne_vacation)
         if refuser_retrait_si_payee not in vacations.VERIFICATIONS_RETRAIT:
             vacations.VERIFICATIONS_RETRAIT.append(refuser_retrait_si_payee)
+
+        from finance.frais import motif_masquage_resultats
+        from scolarite import inscriptions as scol
+        if motif_masquage_resultats not in scol.MOTIFS_MASQUAGE_RESULTATS:
+            scol.MOTIFS_MASQUAGE_RESULTATS.append(motif_masquage_resultats)
