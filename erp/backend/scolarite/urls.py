@@ -17,6 +17,7 @@ urlpatterns = [
          name='scolarite_attestation'),
     path('etudiants/<int:pk>/releve.pdf', views_documents.ReleveView.as_view(), name='scolarite_releve'),
     path('matrice-a3.pdf', views_documents.MatriceA3View.as_view(), name='scolarite_matrice_a3'),
+    path('classes/', views_secretariat.ClassesView.as_view(), name='scolarite_classes'),
     path('saisie/', views_faculte.SaisieView.as_view(), name='scolarite_saisie'),
     path('deliberation/', views_faculte.DeliberationView.as_view(), name='scolarite_deliberation'),
     path('deliberation/excel/', views_faculte.DeliberationExcelView.as_view(), name='scolarite_deliberation_excel'),

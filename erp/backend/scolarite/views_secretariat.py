@@ -5,10 +5,11 @@ from rest_framework import mixins, status, viewsets
 from rest_framework.decorators import action
 from rest_framework.exceptions import ValidationError
 from rest_framework.response import Response
+from rest_framework.views import APIView
 
 from core.api.filtres import entier
 from core.audit import journaliser
-from core.models import Etudiant
+from core.models import Classe, ElementConstitutif, Etudiant
 from scolarite.models import Inscription, Note
 from scolarite.perimetre import q_classe_de_faculte, restreindre_par_faculte
 from scolarite.permissions import Secretariat
@@ -121,3 +122,32 @@ class InscriptionViewSet(mixins.ListModelMixin, mixins.RetrieveModelMixin, mixin
         Note.objects.bulk_create([Note(inscription=inscription, ec=ec) for ec in classe.ecs_au_programme()])
         journaliser(self.request, 'scolarite', 'changement_classe', f'{inscription.etudiant.matricule} : '
                                                                      f'{ancienne} → {classe}')
+
+
+class ClassesView(APIView):
+    """Classes du périmètre avec leur programme (EC par semestre), pour les écrans de la Scolarité."""
+
+    permission_classes = [Secretariat]
+
+    def get(self, request):
+        classes = restreindre_par_faculte(
+            Classe.objects.select_related('annee', 'parcours', 'portail', 'filiere'), request.user)
+        annee = entier(request, 'annee')
+        if annee is not None:
+            classes = classes.filter(annee_id=annee)
+        classes = list(classes.order_by('-annee__date_debut', 'parcours__type_parcours', 'parcours__niveau', 'libelle'))
+        programme = {}
+        for ec in ElementConstitutif.objects.select_related('ue').order_by('ue__semestre', 'ue__code', 'code'):
+            ue = ec.ue
+            programme.setdefault(('p', ue.portail_id) if ue.portail_id else ('f', ue.filiere_id), []).append(ec)
+        resultat = []
+        for c in classes:
+            cle = ('p', c.portail_id) if c.portail_id else ('f', c.filiere_id)
+            resultat.append({
+                'id': c.pk, 'libelle': c.libelle, 'annee': c.annee_id, 'annee_libelle': c.annee.libelle,
+                'niveau': c.parcours.code, 'semestres': list(c.semestres), 'portail': c.portail_id,
+                'filiere': c.filiere_id, 'archivee': c.annee.statut == 'archivee',
+                'ecs': [{'id': ec.pk, 'code': ec.code, 'libelle': ec.libelle, 'semestre': ec.ue.semestre,
+                         'credits': ec.credits} for ec in programme.get(cle, []) if ec.ue.semestre in c.semestres],
+            })
+        return Response(resultat)
