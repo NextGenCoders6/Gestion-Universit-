@@ -46,6 +46,10 @@ class AffectationEC(models.Model):
         verbose_name = "Affectation d'enseignement"
         verbose_name_plural = "Affectations d'enseignement"
         ordering = ['classe', 'ec', 'enseignant', 'type_seance']
+        # Dernier rempart en base (clean() donne le message) ; une affectation « tous types » (NULL)
+        # reste contrôlée par clean(), les NULL étant distincts dans un index unique.
+        constraints = [models.UniqueConstraint(fields=['ec', 'classe', 'enseignant', 'type_seance'],
+                                               name='affectation_unique')]
 
     def __str__(self):
         return f'{self.enseignant} — {self.ec.code} ({self.classe}) {self.type_seance or "tous types"}'

@@ -1,4 +1,5 @@
 from datetime import date, timedelta
+from unittest import mock
 from decimal import Decimal
 
 from django.contrib.auth.models import User
@@ -49,7 +50,8 @@ class EncaissementTests(Base):
             self.assertIn('montant', ctx.exception.message_dict)
         self.assertFalse(Operation.objects.exists())
 
-    def test_mode_et_date(self):
+    @mock.patch('finance.journal.timezone.localdate', return_value=date(2026, 11, 18))
+    def test_mode_et_date(self, _):
         with self.assertRaises(ValidationError) as ctx:
             paiements.encaisser(self.d, '100', 'bitcoin')
         self.assertIn('mode', ctx.exception.message_dict)
@@ -64,7 +66,8 @@ class EncaissementTests(Base):
         with self.assertRaises(ValidationError):
             paiements.encaisser(d, '100', 'especes')
 
-    def test_numeros_consecutifs(self):
+    @mock.patch('finance.journal.timezone.localdate', return_value=date(2026, 11, 18))
+    def test_numeros_consecutifs(self, _):
         a = paiements.encaisser(self.d, '100', 'especes', date=date(2026, 11, 2))
         b = paiements.encaisser(self.d, '100', 'especes', date=date(2026, 11, 3))
         self.assertEqual((a.operation.numero, b.operation.numero), ('OP-2026-000001', 'OP-2026-000002'))

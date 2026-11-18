@@ -377,7 +377,8 @@ class MesFraisView(APIView):
         donnees = []
         for d in dossiers:
             j = dossier_json(d, detail=True)
-            j['paiements'] = [p for p in j['paiements'] if not p['annule']]
+            # L'étudiant ne voit ni les paiements annulés ni qui les a saisis.
+            j['paiements'] = [{k: v for k, v in p.items() if k != 'par'} for p in j['paiements'] if not p['annule']]
             donnees.append(j)
         return Response(donnees)
 
