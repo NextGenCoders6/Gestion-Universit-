@@ -31,3 +31,9 @@ export function erreursServeur(error, champsFormulaire) {
   if (!global && Object.keys(champs).length === 0) global = 'Une erreur est survenue.';
   return { champs, global };
 }
+
+/** Un seul message à afficher (toast, dialogue) : le message général, sinon celui du premier champ. */
+export function messageErreur(error) {
+  const { champs, global } = erreursServeur(error);
+  return global ?? Object.values(champs)[0] ?? 'Une erreur est survenue.';
+}

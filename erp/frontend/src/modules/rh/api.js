@@ -16,6 +16,7 @@ export const creerEmploye = (d) => apiClient.post('/rh/employes/', d).then(donne
 
 export const listerContrats = (params = {}) => apiClient.get('/rh/contrats/', { params }).then(donnees);
 export const creerContrat = (d) => apiClient.post('/rh/contrats/', d).then(donnees);
+export const supprimerContrat = (id) => apiClient.delete(`/rh/contrats/${id}/`);
 export const terminerContrat = (id, dateFin) => apiClient.post(`/rh/contrats/${id}/terminer/`, { date_fin: dateFin }).then(donnees);
 
 export const listerVacations = (params = {}) => apiClient.get('/rh/vacations/', { params }).then(donnees);

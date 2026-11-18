@@ -9,7 +9,8 @@ import Champ from '@/components/shared/Champ';
 import ErreurFormulaire from '@/components/shared/ErreurFormulaire';
 import FormModal from '@/components/shared/FormModal';
 import { useToast } from '@/hooks/use-toast';
-import { erreursServeur } from '@/lib/erreurs';
+import { confirmer } from '@/lib/confirmer';
+import { erreursServeur, messageErreur } from '@/lib/erreurs';
 import * as api from '../api';
 import { useEstResponsableRH } from '../hooks';
 import { dateFr, ETATS_CONTRAT, montant, TYPES_CONTRAT } from '../lib/format';
@@ -62,6 +63,13 @@ function FinContrat({ contrat, onFermer }) {
 
 export default function SectionContrats({ personne, contrats, enseignant }) {
   const responsable = useEstResponsableRH();
+  const client = useQueryClient();
+  const { toast } = useToast();
+  const annuler = async (c) => {
+    if (!(await confirmer({ titre: 'Annuler ce contrat à venir ?', libelleConfirmer: 'Annuler le contrat', destructif: true }))) return;
+    try { await api.supprimerContrat(c.id); client.invalidateQueries({ queryKey: ['rh'] }); toast({ title: 'Contrat annulé' }); }
+    catch (e) { toast({ title: 'Annulation impossible', description: messageErreur(e), variant: 'destructive' }); }
+  };
   const [nouveau, setNouveau] = useState(false);
   const [fin, setFin] = useState(null);
   const types = enseignant ? TYPES_CONTRAT : TYPES_CONTRAT.filter((t) => t.valeur === 'permanent');
@@ -88,6 +96,9 @@ export default function SectionContrats({ personne, contrats, enseignant }) {
               <Badge variant={c.etat === 'en_cours' ? 'secondary' : 'outline'}>{ETATS_CONTRAT[c.etat]}</Badge>
               {responsable && c.etat === 'en_cours' && (
                 <Button size="sm" variant="ghost" className="text-destructive" onClick={() => setFin(c)}>Terminer</Button>
+              )}
+              {responsable && c.etat === 'a_venir' && (
+                <Button size="sm" variant="ghost" className="text-destructive" onClick={() => annuler(c)}>Annuler le contrat</Button>
               )}
             </div>
           </li>

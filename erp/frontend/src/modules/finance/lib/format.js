@@ -12,4 +12,7 @@ export const ETATS_ECHEANCE = {
 };
 export const STATUTS_FRAIS = { paye: 'Soldé', partiel: 'Partiel', non_paye: 'Non payé' };
 export const STATUTS_PAIE = { paye: 'Payée', partiel: 'Partielle', en_attente: 'En attente' };
-export const moisCourant = () => new Date().toISOString().slice(0, 7);
+export const moisCourant = () => {
+  const d = new Date();   // heure locale (toISOString serait en UTC : décalé autour de minuit)
+  return `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}`;
+};

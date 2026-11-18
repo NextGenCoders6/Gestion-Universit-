@@ -18,3 +18,12 @@ describe('erreursServeur', () => {
     expect(erreursServeur(erreur({ filiere: ['Invalide.'] })).champs).toEqual({ filiere: 'Invalide.' });
   });
 });
+
+describe('messageErreur', () => {
+  it('message général, sinon le premier message de champ', async () => {
+    const { messageErreur } = await import('./erreurs');
+    expect(messageErreur({ response: { status: 400, data: { detail: 'Refusé.' } } })).toBe('Refusé.');
+    expect(messageErreur({ response: { status: 400, data: { echeances: ['La somme doit être égale au montant dû.'] } } }))
+      .toBe('La somme doit être égale au montant dû.');
+  });
+});
