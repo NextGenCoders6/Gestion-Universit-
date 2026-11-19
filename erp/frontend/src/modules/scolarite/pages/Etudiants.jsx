@@ -2,7 +2,6 @@
 import { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { keepPreviousData, useQuery } from '@tanstack/react-query';
-import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { ChevronLeft, ChevronRight, Eye, Plus, Search } from '@/components/ui/icons';
@@ -13,6 +12,8 @@ import NouvelEtudiantDialog from '../components/NouvelEtudiantDialog';
 import Selecteur from '@/components/shared/Selecteur';
 import { useClasses, useEstSecretariat, useSelection } from '../hooks';
 import { optionsClasses, STATUTS_ETUDIANT } from '../lib/format';
+import { CellulePersonne } from '@/components/shared/AvatarInitiales';
+import Pastille from '@/components/shared/Pastille';
 
 const libelleStatut = (s) => STATUTS_ETUDIANT.find((x) => x.valeur === s)?.libelle ?? s;
 
@@ -30,11 +31,10 @@ export default function Etudiants() {
   const pages = Math.max(1, Math.ceil((liste.data?.count ?? 0) / 20));
 
   const colonnes = [
-    { key: 'matricule', label: 'Matricule' },
-    { key: 'nom_complet', label: 'Nom et prénom' },
+    { key: 'nom_complet', label: 'Étudiant', render: (e) => <CellulePersonne nom={e.nom_complet} secondaire={e.matricule} photo={e.photo} /> },
     { key: 'classe', label: 'Classe', render: (e) => e.inscription_courante?.classe_libelle ?? '—' },
     { key: 'statut', label: 'Statut', render: (e) => (
-      <Badge variant={e.statut === 'actif' ? 'secondary' : 'outline'}>{libelleStatut(e.statut)}</Badge>) },
+      <Pastille ton={{ actif: 'vert', diplome: 'bleu' }[e.statut] ?? 'gris'}>{libelleStatut(e.statut)}</Pastille>) },
     { key: 'compte', label: 'Compte', render: (e) => (e.a_un_compte ? 'Activé' : 'Non activé') },
   ];
 

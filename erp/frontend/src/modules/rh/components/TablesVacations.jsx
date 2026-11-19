@@ -5,9 +5,9 @@ import { dateFr, heures, montant } from '../lib/format';
 export function TableVacations({ lignes, actions }) {
   if (!lignes.length) return <p className="py-6 text-center text-sm text-muted-foreground">Aucune vacation.</p>;
   return (
-    <div className="overflow-x-auto rounded-lg border border-border">
+    <div className="carte overflow-x-auto">
       <table className="w-full text-sm">
-        <thead className="bg-muted/50 text-xs uppercase text-muted-foreground">
+        <thead className="bg-muted/50 text-[11px] uppercase tracking-wider text-muted-foreground">
           <tr><th className="px-3 py-2 text-left">Enseignant</th><th className="px-3 py-2 text-left">EC · classe</th>
             <th className="px-2 py-2">Heures faites / prévues</th><th className="px-2 py-2">Heures dues</th><th className="px-2 py-2">Vacation</th>
             {actions && <th className="px-2 py-2" />}</tr>

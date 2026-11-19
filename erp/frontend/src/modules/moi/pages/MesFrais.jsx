@@ -16,7 +16,7 @@ function Dossier({ d }) {
     try { await api.telechargerRecu(x); } catch { setErreurRecu(`Le reçu ${x.numero} n’a pas pu être téléchargé. Réessayez plus tard.`); }
   };
   return (
-    <section className="space-y-3 rounded-lg border border-border bg-card p-4">
+    <section className="space-y-3 carte p-4">
       <header className="flex flex-wrap items-center justify-between gap-2">
         <h2 className="font-semibold">{d.classe_libelle}</h2>
         <p className="text-sm">{fcfa(d.montant_paye)} payés sur {fcfa(d.montant_du)} · reste {fcfa(d.reste)}</p>

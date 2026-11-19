@@ -14,6 +14,7 @@ import { BadgeStatut } from '../components/Badges';
 import { MontantDialog, MotifDialog, PaiementDialog } from '../components/Dialogues';
 import { useEstResponsableFinance } from '../hooks';
 import { dateFr, fcfa, moisCourant, STATUTS_PAIE } from '../lib/format';
+import { CellulePersonne } from '@/components/shared/AvatarInitiales';
 
 function Paiements({ ligne, responsable, onAnnuler }) {
   const { toast } = useToast();
@@ -71,16 +72,16 @@ export default function Paie({ role, titre }) {
         <Selecteur id="statut" label="Statut" vide="Tous" valeur={filtre.statut} className="w-44"
           options={Object.entries(STATUTS_PAIE).map(([valeur, libelle]) => ({ valeur, libelle }))} onChange={(v) => setFiltre((f) => ({ ...f, statut: v }))} />
       </div>
-      <div className="overflow-x-auto rounded-lg border border-border">
+      <div className="carte overflow-x-auto">
         <table className="w-full text-sm">
-          <thead className="bg-muted/50 text-xs uppercase text-muted-foreground"><tr>
+          <thead className="bg-muted/50 text-[11px] uppercase tracking-wider text-muted-foreground"><tr>
             <th className="px-3 py-2 text-left">Bénéficiaire</th><th className="px-3 py-2 text-left">Objet</th><th className="px-2 py-2">Payé / dû</th><th className="px-2 py-2">Statut</th><th className="px-2 py-2" />
           </tr></thead>
           <tbody>
             {lignes.length === 0 && <tr><td colSpan={5} className="px-3 py-8 text-center text-muted-foreground">Aucune ligne de paie.</td></tr>}
             {lignes.map((l) => [
               <tr key={l.id} className="border-t border-border">
-                <td className="px-3 py-1.5 font-medium">{l.nom_complet}</td>
+                <td className="px-3 py-2"><CellulePersonne nom={l.nom_complet} /></td>
                 <td className="px-3 py-1.5">{l.origine === 'salaire' ? `Salaire ${l.mois}` : l.libelle.replace(/^Vacation — [^,]+, /, 'Vacation — ')}</td>
                 <td className="px-2 py-1.5 text-center">{fcfa(l.montant_paye)} / {fcfa(l.montant_du)}</td>
                 <td className="px-2 py-1.5 text-center"><BadgeStatut libelle={STATUTS_PAIE[l.statut]} ok={l.statut === 'paye'} /></td>

@@ -13,7 +13,7 @@ export default function MesEnseignements() {
       {affectations.data?.length === 0 && <p className="text-sm text-muted-foreground">Aucune affectation pour l’instant.</p>}
       <div className="grid gap-3 md:grid-cols-2">
         {(affectations.data ?? []).map((a) => (
-          <article key={a.id} className="space-y-2 rounded-lg border border-border bg-card p-4">
+          <article key={a.id} className="space-y-2 carte p-4">
             <h3 className="font-semibold">{a.ec_code} — {a.ec_libelle}</h3>
             <p className="text-xs text-muted-foreground">{a.classe_libelle} · {a.type_seance ?? 'tous types'}</p>
             <BarreAvancement faites={pct(a.heures_effectuees, a.heures_prevues)} planifiees={pct(a.heures_consommees, a.heures_prevues)}

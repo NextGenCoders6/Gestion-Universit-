@@ -90,7 +90,7 @@ export default function Enseignements() {
         {(lignes.data?.results ?? []).map((l) => {
           const totalAffecte = l.affectations.reduce((s, a) => s + a.heures_prevues, 0);
           return (
-            <article key={`${l.ec}-${l.classe}`} className="space-y-3 rounded-lg border border-border bg-card p-4">
+            <article key={`${l.ec}-${l.classe}`} className="space-y-3 carte p-4">
               <header className="flex items-start justify-between gap-2">
                 <div>
                   <h3 className="font-semibold text-foreground">{l.ec_code} — {l.ec_libelle}</h3>

@@ -74,9 +74,9 @@ export default function Journal() {
           options={CATEGORIES.map(([valeur, libelle]) => ({ valeur, libelle }))} />
         <div className="space-y-1.5"><Label htmlFor="q">Rechercher</Label><Input id="q" value={filtre.q} onChange={(e) => changer('q', e.target.value)} placeholder="Libellé ou numéro" /></div>
       </div>
-      <div className="overflow-x-auto rounded-lg border border-border">
+      <div className="carte overflow-x-auto">
         <table className="w-full text-sm">
-          <thead className="bg-muted/50 text-xs uppercase text-muted-foreground"><tr>
+          <thead className="bg-muted/50 text-[11px] uppercase tracking-wider text-muted-foreground"><tr>
             <th className="px-3 py-2 text-left">N°</th><th className="px-3 py-2 text-left">Date</th><th className="px-3 py-2 text-left">Libellé</th><th className="px-3 py-2 text-right">Montant</th><th className="px-2 py-2" />
           </tr></thead>
           <tbody>

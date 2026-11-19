@@ -5,6 +5,7 @@
  * remplit le `menu` de son module ; un module au menu vide affiche une page
  * « disponible dans une prochaine version ».
  *
+ * couleur : teinte d'accent du module (triplet HSL, posé dans --module par ModuleShell).
  * menu : [{ chemin (relatif au module), libelle, icone, niveaux? }]
  *        `niveaux` absent = visible pour tout niveau du module.
  */
@@ -16,6 +17,7 @@ import {
 export const REGISTRE = [
   {
     code: 'scolarite',
+    couleur: '221 83% 53%',
     libelle: 'Scolarité',
     description: 'Inscriptions, notes, délibérations et documents officiels.',
     icone: GraduationCap,
@@ -30,6 +32,7 @@ export const REGISTRE = [
   },
   {
     code: 'edt',
+    couleur: '192 82% 38%',
     libelle: 'Emploi du temps',
     description: 'Planning des séances, affectations et progression des enseignements.',
     icone: CalendarDays,
@@ -43,6 +46,7 @@ export const REGISTRE = [
   },
   {
     code: 'rh',
+    couleur: '262 62% 56%',
     libelle: 'Ressources humaines',
     description: 'Enseignants, personnel, contrats et vacations.',
     icone: Users,
@@ -57,6 +61,7 @@ export const REGISTRE = [
   },
   {
     code: 'finance',
+    couleur: '36 88% 44%',
     libelle: 'Finance',
     description: 'Frais de scolarité, paie et journal des opérations.',
     icone: BarChart3,
@@ -72,6 +77,7 @@ export const REGISTRE = [
   },
   {
     code: 'logistique',
+    couleur: '18 85% 50%',
     libelle: 'Logistique',
     description: 'Bus, trajets et affectations des chauffeurs.',
     icone: MapPin,
@@ -86,6 +92,7 @@ export const REGISTRE = [
   },
   {
     code: 'parametres',
+    couleur: '215 16% 42%',
     libelle: 'Paramètres',
     description: 'Utilisateurs et droits, référentiel académique, établissement.',
     icone: SlidersHorizontal,
@@ -117,3 +124,9 @@ export function menuVisible(module, niveaux = []) {
     (item) => !item.niveaux || item.niveaux.some((n) => niveaux.includes(n)),
   );
 }
+
+/** Style à poser sur un conteneur pour que `bg-module`, `text-module`… prennent la couleur du module. */
+export const styleModule = (module) => (module?.couleur ? { '--module': module.couleur } : undefined);
+
+/** Couleur d'accent de « Mon espace » : le vert UCCB. */
+export const COULEUR_MON_ESPACE = '147.6 83.4% 30%';

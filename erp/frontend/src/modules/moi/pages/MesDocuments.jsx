@@ -47,7 +47,7 @@ export default function MesDocuments() {
   return (
     <div className="space-y-4">
       <PageHeader titre="Mes documents" description="Supports de cours déposés pour vos classes (PDF, Word, Excel, PowerPoint, texte)." />
-      <form className="grid gap-3 rounded-lg border border-border bg-card p-4 md:grid-cols-2"
+      <form className="grid gap-3 carte p-4 md:grid-cols-2"
         onSubmit={(e) => { e.preventDefault(); if (complet) deposer.mutate(); }}>
         <div className="space-y-1.5">
           <Label htmlFor="doc-ens">Enseignement</Label>

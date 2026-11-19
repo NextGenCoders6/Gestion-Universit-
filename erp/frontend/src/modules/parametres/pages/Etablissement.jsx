@@ -35,7 +35,7 @@ export default function Etablissement() {
     <div className="max-w-xl space-y-4">
       <PageHeader titre="Établissement" description="Signataire et ville utilisés sur les documents officiels." />
       <form
-        className="space-y-4 rounded-lg border border-border bg-card p-5"
+        className="space-y-4 carte p-5"
         onSubmit={form.handleSubmit((v) => enregistrer.mutate({
           nom_secretaire: v.nom_secretaire, genre_secretaire: v.genre_secretaire, ville_signature: v.ville_signature,
         }))}

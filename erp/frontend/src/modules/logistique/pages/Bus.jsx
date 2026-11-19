@@ -1,7 +1,6 @@
 import { useState } from 'react';
 import { useWatch } from 'react-hook-form';
 import { useQuery, useQueryClient } from '@tanstack/react-query';
-import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
 import { Pencil, Plus, Trash2 } from '@/components/ui/icons';
 import PageHeader from '@/components/shared/PageHeader';
@@ -11,6 +10,7 @@ import { erreursServeur } from '@/lib/erreurs';
 import * as api from '../api';
 import Formulaire from '../Formulaire';
 import { STATUTS_BUS, useEstResponsableLogistique } from '../hooks';
+import Pastille from '@/components/shared/Pastille';
 
 const CHAMPS = [
   { nom: 'numero', label: 'Numéro', requis: true },
@@ -40,10 +40,10 @@ export default function Bus() {
       </PageHeader>
       <div className="grid gap-3 sm:grid-cols-2 xl:grid-cols-3">
         {(bus.data ?? []).map((b) => (
-          <article key={b.id} className="space-y-2 rounded-lg border border-border bg-card p-4">
+          <article key={b.id} className="space-y-2 carte p-4">
             <header className="flex items-start justify-between gap-2">
               <div><h3 className="font-semibold">Bus {b.numero}</h3><p className="text-xs text-muted-foreground">{b.plaque} · {b.capacite} places</p></div>
-              <Badge variant={b.statut === 'actif' ? 'secondary' : 'outline'}>{libelle(b.statut)}</Badge>
+              <Pastille ton={{ actif: 'vert', maintenance: 'ambre', hors_service: 'rouge' }[b.statut] ?? 'gris'}>{libelle(b.statut)}</Pastille>
             </header>
             <p className="text-sm">{b.affectation_active ? <>{b.affectation_active.chauffeur} · {b.affectation_active.trajet}</> : <span className="text-muted-foreground">Aucune affectation en cours</span>}</p>
             {responsable && (

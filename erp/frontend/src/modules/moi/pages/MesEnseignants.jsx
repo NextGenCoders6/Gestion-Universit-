@@ -14,7 +14,7 @@ export default function MesEnseignants() {
       {enseignants.data?.length === 0 && <p className="text-sm text-muted-foreground">Aucun enseignant affecté pour l’instant.</p>}
       <div className="grid gap-3 sm:grid-cols-2 xl:grid-cols-3">
         {(enseignants.data ?? []).map((e) => (
-          <article key={e.id} className="flex gap-3 rounded-lg border border-border bg-card p-4">
+          <article key={e.id} className="flex gap-3 carte p-4">
             <Avatar className="size-12">
               {e.photo && <AvatarImage src={e.photo} alt="" />}
               <AvatarFallback>{initiales(e.nom_complet)}</AvatarFallback>
