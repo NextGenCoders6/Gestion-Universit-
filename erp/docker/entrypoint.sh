@@ -20,9 +20,13 @@ sys.exit(1)
 PY
 fi
 
-if [ "${MIGRATIONS_AU_DEMARRAGE:-1}" = "1" ]; then
-  python manage.py migrate --noinput
+# Seul le démarrage du serveur migre et collecte : une commande ponctuelle (docker compose run … seed_demo)
+# ne doit pas lancer une seconde migration en parallèle de celle du service web.
+if [ "$1" = "gunicorn" ]; then
+  if [ "${MIGRATIONS_AU_DEMARRAGE:-1}" = "1" ]; then
+    python manage.py migrate --noinput
+  fi
+  python manage.py collectstatic --noinput -v0
 fi
-python manage.py collectstatic --noinput -v0
 
 exec "$@"

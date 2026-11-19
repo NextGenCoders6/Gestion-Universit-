@@ -34,7 +34,8 @@ docker compose exec web python manage.py createsuperuser
 
 ## Données de démonstration
 
-Les seeds sont refusés quand `DEBUG=False`, car leurs comptes partagent un mot de passe publié. Pour une démonstration
+Les seeds sont refusés quand `DEBUG=False`, car leurs comptes partagent un mot de passe publié. Attendez que le service
+`web` ait fini ses migrations (`docker compose logs -f web` affiche « Listening at »), puis, pour une démonstration
 locale uniquement, lancez-les en forçant `DEBUG` pour cette seule commande :
 
 ```bash
