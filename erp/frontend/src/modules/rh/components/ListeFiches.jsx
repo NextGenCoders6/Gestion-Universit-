@@ -2,7 +2,6 @@
 import { useState } from 'react';
 import { useNavigate, useSearchParams } from 'react-router-dom';
 import { keepPreviousData, useQuery } from '@tanstack/react-query';
-import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { ChevronLeft, ChevronRight, Eye, Plus, Search } from '@/components/ui/icons';
@@ -12,6 +11,8 @@ import Selecteur from '@/components/shared/Selecteur';
 import { useEstResponsableRH } from '../hooks';
 import { libelleContrat } from '../lib/format';
 import NouvelleFicheDialog from './NouvelleFicheDialog';
+import { CellulePersonne } from '@/components/shared/AvatarInitiales';
+import Pastille from '@/components/shared/Pastille';
 
 export default function ListeFiches({ role, titre, lister, colonnes, filtres = [] }) {
   const navigate = useNavigate();
@@ -32,11 +33,10 @@ export default function ListeFiches({ role, titre, lister, colonnes, filtres = [
   const pages = Math.max(1, Math.ceil((liste.data?.count ?? 0) / 20));
 
   const toutes = [
-    { key: 'matricule', label: 'Matricule' },
-    { key: 'nom_complet', label: 'Nom et prénom' },
+    { key: 'nom_complet', label: 'Nom et prénom', render: (f) => <CellulePersonne nom={f.nom_complet} secondaire={f.matricule} /> },
     ...colonnes,
     { key: 'contrat', label: 'Contrat', render: (f) => (
-      <Badge variant={f.actif ? 'secondary' : 'outline'}>{libelleContrat(f.contrat_en_cours)}</Badge>) },
+      <Pastille ton={f.actif ? 'vert' : 'gris'}>{libelleContrat(f.contrat_en_cours)}</Pastille>) },
   ];
 
   return (

@@ -61,20 +61,20 @@ export default function DataTable({
   };
 
   return (
-    <div className="w-full rounded-lg border border-border overflow-hidden">
+    <div className="carte w-full overflow-hidden">
       <Table>
         <TableHeader className="bg-muted/50">
           <TableRow>
             {columns.map((col) => (
-              <TableHead 
-                key={col.key} 
-                className="text-xs uppercase font-semibold text-muted-foreground h-10"
+              <TableHead
+                key={col.key}
+                className="h-11 text-[11px] font-semibold uppercase tracking-wider text-muted-foreground"
               >
                 {col.label}
               </TableHead>
             ))}
             {hasRowActions && (
-              <TableHead className={cn('text-xs uppercase font-semibold text-muted-foreground text-right h-10', actionsEnMenu ? 'w-12' : 'w-[100px]')}>
+              <TableHead className={cn('h-11 text-right text-[11px] font-semibold uppercase tracking-wider text-muted-foreground', actionsEnMenu ? 'w-12' : 'w-[100px]')}>
                 <span className="sr-only">Actions</span>
               </TableHead>
             )}
@@ -119,15 +119,11 @@ export default function DataTable({
             data.map((row, rowIndex) => (
               <TableRow 
                 key={row.id || rowIndex} 
-                className={`
-                  group border-b last:border-b-0 transition-colors
-                  hover:bg-muted/40
-                  ${rowIndex % 2 === 0 ? 'bg-background' : 'bg-muted/20'}
-                `}
+                className="group border-b border-border/60 transition-colors last:border-b-0 hover:bg-muted/40"
               >
                 {/* Cellules de données */}
                 {columns.map((col) => (
-                  <TableCell key={`${rowIndex}-${col.key}`} className="py-3 text-sm">
+                  <TableCell key={`${rowIndex}-${col.key}`} className="py-3.5 text-sm">
                     {col.render ? col.render(row) : row[col.key]}
                   </TableCell>
                 ))}

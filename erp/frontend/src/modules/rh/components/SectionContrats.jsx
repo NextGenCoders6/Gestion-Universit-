@@ -2,7 +2,6 @@
 import { useState } from 'react';
 import { useForm } from 'react-hook-form';
 import { useMutation, useQueryClient } from '@tanstack/react-query';
-import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
 import { Plus } from '@/components/ui/icons';
 import Champ from '@/components/shared/Champ';
@@ -16,6 +15,7 @@ import { useEstResponsableRH } from '../hooks';
 import { dateFr, ETATS_CONTRAT, montant, TYPES_CONTRAT } from '../lib/format';
 import { CHAMPS_CONTRAT, contratDepuis } from '../lib/contrat';
 import ChampsContrat from './ChampsContrat';
+import Pastille from '@/components/shared/Pastille';
 
 function NouveauContrat({ personne, types, onFermer }) {
   const client = useQueryClient();
@@ -74,7 +74,7 @@ export default function SectionContrats({ personne, contrats, enseignant }) {
   const [fin, setFin] = useState(null);
   const types = enseignant ? TYPES_CONTRAT : TYPES_CONTRAT.filter((t) => t.valeur === 'permanent');
   return (
-    <section className="space-y-2 rounded-lg border border-border bg-card p-4">
+    <section className="space-y-2 carte p-4">
       <header className="flex items-center justify-between">
         <h2 className="font-semibold">Contrats</h2>
         {responsable && <Button size="sm" variant="outline" onClick={() => setNouveau(true)}><Plus /> Nouveau contrat</Button>}
@@ -93,7 +93,7 @@ export default function SectionContrats({ personne, contrats, enseignant }) {
               </div>
             </div>
             <div className="flex items-center gap-2">
-              <Badge variant={c.etat === 'en_cours' ? 'secondary' : 'outline'}>{ETATS_CONTRAT[c.etat]}</Badge>
+              <Pastille ton={{ en_cours: 'vert', a_venir: 'bleu' }[c.etat] ?? 'gris'}>{ETATS_CONTRAT[c.etat]}</Pastille>
               {responsable && c.etat === 'en_cours' && (
                 <Button size="sm" variant="ghost" className="text-destructive" onClick={() => setFin(c)}>Terminer</Button>
               )}

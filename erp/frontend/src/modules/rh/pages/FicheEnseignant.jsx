@@ -17,7 +17,7 @@ export default function FicheEnseignant() {
       infosRole={(f) => [['Département', `${f.departement_libelle} (${f.faculte})`], ['Grade', f.grade],
         ['Chef de département', f.est_chef ? 'Oui' : 'Non']]}>
       {(f) => (
-        <section className="space-y-2 rounded-lg border border-border bg-card p-4">
+        <section className="space-y-2 carte p-4">
           <h2 className="font-semibold">Enseignements de l’année et vacations</h2>
           {f.affectations.length === 0 && <p className="text-sm text-muted-foreground">Aucune affectation cette année.</p>}
           <table className="w-full text-sm">

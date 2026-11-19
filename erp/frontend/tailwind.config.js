@@ -19,10 +19,21 @@ export default {
           ink: '#141414',
           paper: '#F5F3EE',
         },
+        canvas: 'hsl(var(--canvas))',
         background: 'hsl(var(--background))',
+        input: 'hsl(var(--input))',
+        success: 'hsl(var(--success) / <alpha-value>)',
+        warning: 'hsl(var(--warning) / <alpha-value>)',
+        info: 'hsl(var(--info) / <alpha-value>)',
+        module: 'hsl(var(--module) / <alpha-value>)',
+        sidebar: {
+          DEFAULT: 'hsl(var(--sidebar))',
+          foreground: 'hsl(var(--sidebar-foreground))',
+          muted: 'hsl(var(--sidebar-muted))',
+        },
         foreground: 'hsl(var(--foreground))',
         primary: {
-          DEFAULT: 'hsl(var(--primary))',
+          DEFAULT: 'hsl(var(--primary) / <alpha-value>)',
           foreground: 'hsl(var(--primary-foreground))',
         },
         secondary: {
@@ -38,7 +49,7 @@ export default {
           foreground: 'hsl(var(--accent-foreground))',
         },
         destructive: {
-          DEFAULT: 'hsl(var(--destructive))',
+          DEFAULT: 'hsl(var(--destructive) / <alpha-value>)',
           foreground: 'hsl(var(--destructive-foreground))',
         },
         border: 'hsl(var(--border))',
@@ -53,6 +64,7 @@ export default {
         },
       },
       borderRadius: {
+        xl: 'calc(var(--radius) + 4px)',
         lg: 'var(--radius)',
         md: 'calc(var(--radius) - 2px)',
         sm: 'calc(var(--radius) - 4px)',
@@ -78,6 +90,9 @@ export default {
       boxShadow: {
         '2xs': '0 1px rgb(0 0 0 / 0.05)',
         xs: '0 1px 2px 0 rgb(0 0 0 / 0.05)',
+        card: '0 1px 2px rgb(16 24 40 / 0.04), 0 1px 3px rgb(16 24 40 / 0.05)',
+        'card-hover': '0 4px 12px -2px rgb(16 24 40 / 0.08), 0 2px 4px -2px rgb(16 24 40 / 0.05)',
+        flottant: '0 12px 32px -8px rgb(16 24 40 / 0.18)',
       },
     },
   },

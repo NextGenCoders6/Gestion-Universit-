@@ -81,9 +81,9 @@ export default function Tarifs() {
       <PageHeader titre="Tarifs" description="Frais de scolarité par année et par niveau, payables par mensualités.">
         <Button onClick={() => setEdition('nouveau')}><Plus /> Nouveau tarif</Button>
       </PageHeader>
-      <div className="overflow-x-auto rounded-lg border border-border">
+      <div className="carte overflow-x-auto">
         <table className="w-full text-sm">
-          <thead className="bg-muted/50 text-xs uppercase text-muted-foreground"><tr>
+          <thead className="bg-muted/50 text-[11px] uppercase tracking-wider text-muted-foreground"><tr>
             <th className="px-3 py-2 text-left">Année</th><th className="px-3 py-2 text-left">Niveau</th><th className="px-3 py-2 text-right">Montant</th><th className="px-3 py-2 text-left">Modalité</th><th className="px-2 py-2" />
           </tr></thead>
           <tbody>

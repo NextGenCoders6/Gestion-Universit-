@@ -39,13 +39,13 @@ export default function DossierFrais() {
         {responsable && d.echeances.length > 0 && <Button variant="outline" onClick={() => setDialogue('echeancier')}>Adapter l’échéancier</Button>}
       </PageHeader>
       <div className="grid gap-3 sm:grid-cols-4">
-        <div className="rounded-lg border border-border bg-card p-3"><p className="text-xs text-muted-foreground">Montant dû</p><p className="font-bold">{fcfa(d.montant_du)}{d.montant_ajuste && <span className="ml-1 text-xs font-normal text-muted-foreground">(ajusté)</span>}</p></div>
-        <div className="rounded-lg border border-border bg-card p-3"><p className="text-xs text-muted-foreground">Payé</p><p className="font-bold">{fcfa(d.montant_paye)}</p></div>
-        <div className="rounded-lg border border-border bg-card p-3"><p className="text-xs text-muted-foreground">Reste</p><p className="font-bold">{fcfa(d.reste)}</p>{d.trop_percu > 0 && <p className="text-xs text-amber-700">Trop-perçu : {fcfa(d.trop_percu)}</p>}</div>
-        <div className="rounded-lg border border-border bg-card p-3"><p className="text-xs text-muted-foreground">Situation</p>
+        <div className="carte p-3"><p className="text-xs text-muted-foreground">Montant dû</p><p className="font-bold">{fcfa(d.montant_du)}{d.montant_ajuste && <span className="ml-1 text-xs font-normal text-muted-foreground">(ajusté)</span>}</p></div>
+        <div className="carte p-3"><p className="text-xs text-muted-foreground">Payé</p><p className="font-bold">{fcfa(d.montant_paye)}</p></div>
+        <div className="carte p-3"><p className="text-xs text-muted-foreground">Reste</p><p className="font-bold">{fcfa(d.reste)}</p>{d.trop_percu > 0 && <p className="text-xs text-amber-700">Trop-perçu : {fcfa(d.trop_percu)}</p>}</div>
+        <div className="carte p-3"><p className="text-xs text-muted-foreground">Situation</p>
           {d.sans_tarif ? <BadgeStatut libelle="Sans tarif" alerte /> : d.en_retard ? <BadgeStatut libelle={`En retard : ${fcfa(d.montant_en_retard)}`} alerte /> : <BadgeStatut libelle={STATUTS_FRAIS[d.statut]} ok={d.statut === 'paye'} />}</div>
       </div>
-      <section className="rounded-lg border border-border bg-card p-4">
+      <section className="carte p-4">
         <h2 className="mb-2 font-semibold">Échéancier{d.echeancier_adapte && <span className="ml-2 text-xs font-normal text-muted-foreground">adapté</span>}</h2>
         {d.echeances.length === 0 ? <p className="text-sm text-muted-foreground">Pas d’échéancier (aucun montant dû).</p> : (
           <table className="w-full text-sm">
@@ -59,7 +59,7 @@ export default function DossierFrais() {
           </table>
         )}
       </section>
-      <section className="rounded-lg border border-border bg-card p-4">
+      <section className="carte p-4">
         <h2 className="mb-2 font-semibold">Paiements</h2>
         {d.paiements.length === 0 && <p className="text-sm text-muted-foreground">Aucun paiement.</p>}
         <ul className="space-y-1">{d.paiements.map((p) => (

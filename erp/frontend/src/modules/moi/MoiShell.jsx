@@ -2,6 +2,7 @@
 import { Navigate, Route, Routes } from 'react-router-dom';
 import { BookOpen, CalendarDays, FileText, GraduationCap, Tag, UserCircle, Users } from '@/components/ui/icons';
 import ModuleShell from '@/app/ModuleShell';
+import { COULEUR_MON_ESPACE } from '@/app/modules';
 import Introuvable from '@/app/pages/Introuvable';
 import useAuthStore, { aRole } from '@/store/authStore';
 import MesDocuments from './pages/MesDocuments';
@@ -40,7 +41,7 @@ export default function MoiShell() {
   const enseignant = useAuthStore((s) => aRole(s, 'enseignant'));
   const etudiant = useAuthStore((s) => aRole(s, 'etudiant'));
   const menu = enseignant ? MENU_ENSEIGNANT : etudiant ? MENU_ETUDIANT : [];
-  const module = { code: 'moi', libelle: 'Mon espace', chemin: '/moi', menu };
+  const module = { code: 'moi', libelle: 'Mon espace', chemin: '/moi', menu, icone: UserCircle, couleur: COULEUR_MON_ESPACE };
   return (
     <ModuleShell module={module}>
       <Routes>

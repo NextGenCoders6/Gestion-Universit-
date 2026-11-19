@@ -8,7 +8,7 @@ const note = (v) => (v === null || v === undefined ? '—' : Number(v).toFixed(2
 function Semestre({ s }) {
   const r = s.resultat;
   return (
-    <section className="space-y-2 rounded-lg border border-border bg-card p-4">
+    <section className="space-y-2 carte p-4">
       <header className="flex flex-wrap items-center justify-between gap-2">
         <h3 className="font-semibold">{s.semestre}</h3>
         {r ? (

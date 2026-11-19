@@ -61,9 +61,9 @@ export default function Transports() {
       <PageHeader titre="Transports" description="Carburant, entretien et réparations des bus ; chaque dépense passe au journal.">
         {responsable && <Button onClick={() => setDialogue('nouvelle')}><Plus /> Nouvelle dépense</Button>}
       </PageHeader>
-      <div className="overflow-x-auto rounded-lg border border-border">
+      <div className="carte overflow-x-auto">
         <table className="w-full text-sm">
-          <thead className="bg-muted/50 text-xs uppercase text-muted-foreground"><tr>
+          <thead className="bg-muted/50 text-[11px] uppercase tracking-wider text-muted-foreground"><tr>
             <th className="px-3 py-2 text-left">Date</th><th className="px-3 py-2 text-left">Bus</th><th className="px-3 py-2 text-left">Dépense</th><th className="px-3 py-2 text-right">Montant</th><th className="px-2 py-2" />
           </tr></thead>
           <tbody>

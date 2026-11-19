@@ -10,6 +10,7 @@ import Selecteur from '@/components/shared/Selecteur';
 import * as api from '../api';
 import { BadgeStatut } from '../components/Badges';
 import { dateFr, fcfa, STATUTS_FRAIS } from '../lib/format';
+import { CellulePersonne } from '@/components/shared/AvatarInitiales';
 
 export default function Frais() {
   const navigate = useNavigate();
@@ -26,7 +27,7 @@ export default function Frais() {
   const numero = Number(v('page') || 1);
   const pages = Math.max(1, Math.ceil((liste.data?.count ?? 0) / 20));
   const colonnes = [
-    { key: 'nom_complet', label: 'Étudiant', render: (d) => <>{d.nom_complet}<div className="text-xs text-muted-foreground">{d.matricule} · {d.classe_libelle}</div></> },
+    { key: 'nom_complet', label: 'Étudiant', render: (d) => <CellulePersonne nom={d.nom_complet} secondaire={`${d.matricule} · ${d.classe_libelle}`} /> },
     { key: 'montant', label: 'Payé / dû', render: (d) => <>{fcfa(d.montant_paye)}<div className="text-xs text-muted-foreground">sur {fcfa(d.montant_du)}</div></> },
     { key: 'statut', label: 'Statut', render: (d) => (d.sans_tarif ? <BadgeStatut libelle="Sans tarif" alerte /> : <BadgeStatut libelle={STATUTS_FRAIS[d.statut]} ok={d.statut === 'paye'} />) },
     { key: 'echeance', label: 'Mensualités', render: (d) => (d.en_retard

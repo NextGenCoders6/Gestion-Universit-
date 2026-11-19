@@ -20,7 +20,7 @@ function Info({ label, children }) {
 function Semestre({ s, onReleve, secretariat }) {
   const { ligne, resultat } = s;
   return (
-    <section className="space-y-2 rounded-lg border border-border bg-card p-4">
+    <section className="space-y-2 carte p-4">
       <header className="flex flex-wrap items-center justify-between gap-2">
         <h3 className="font-semibold">{s.semestre}</h3>
         <div className="flex items-center gap-2 text-sm">
@@ -101,7 +101,7 @@ export default function FicheEtudiant() {
         )}
       </PageHeader>
       <div className="grid gap-4 lg:grid-cols-[1fr_320px]">
-        <dl className="grid grid-cols-2 gap-3 rounded-lg border border-border bg-card p-4 sm:grid-cols-3">
+        <dl className="grid grid-cols-2 gap-3 carte p-4 sm:grid-cols-3">
           <Info label="Genre">{p.genre === 'F' ? 'Féminin' : 'Masculin'}</Info>
           <Info label="Date de naissance">{p.date_naissance && new Date(p.date_naissance).toLocaleDateString('fr-FR')}</Info>
           <Info label="Lieu de naissance">{p.lieu_naissance}</Info>
@@ -109,7 +109,7 @@ export default function FicheEtudiant() {
           <Info label="Téléphone">{p.telephone}</Info>
           <Info label="Nationalité">{p.nationalite}</Info>
         </dl>
-        <div className="space-y-3 rounded-lg border border-border bg-card p-4">
+        <div className="space-y-3 carte p-4">
           {secretariat ? (
             <Selecteur id="statut" label="Statut de l’étudiant" valeur={e.statut} options={STATUTS_ETUDIANT} vide="—"
               onChange={async (v) => {

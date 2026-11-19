@@ -105,9 +105,9 @@ export default function Deliberation() {
               </span>
             )}
           </div>
-          <div className="overflow-x-auto rounded-lg border border-border">
+          <div className="carte overflow-x-auto">
             <table className="w-full text-sm">
-              <thead className="bg-muted/50 text-xs uppercase text-muted-foreground">
+              <thead className="bg-muted/50 text-[11px] uppercase tracking-wider text-muted-foreground">
                 <tr>
                   <th className="px-2 py-2">Rang</th>
                   <th className="px-3 py-2 text-left">Étudiant</th>

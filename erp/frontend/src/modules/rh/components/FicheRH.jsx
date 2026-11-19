@@ -23,7 +23,7 @@ export default function FicheRH({ id, cle, charger, retour, enseignant, infosRol
         <ArrowLeft className="size-4" /> {retour}
       </Link>
       <PageHeader titre={f.nom_complet} description={`Matricule ${f.matricule} · ${libelleContrat(f.contrat_en_cours)}`} />
-      <dl className="grid grid-cols-2 gap-3 rounded-lg border border-border bg-card p-4 sm:grid-cols-4">
+      <dl className="grid grid-cols-2 gap-3 carte p-4 sm:grid-cols-4">
         <Info label="Genre">{p.genre === 'F' ? 'Féminin' : 'Masculin'}</Info>
         <Info label="Date de naissance">{p.date_naissance && dateFr(p.date_naissance)}</Info>
         <Info label="E-mail">{p.email}</Info>

@@ -14,6 +14,7 @@ import { erreursServeur, messageErreur } from '@/lib/erreurs';
 import * as api from '../api';
 import Formulaire from '../Formulaire';
 import { useEstResponsableLogistique } from '../hooks';
+import { CellulePersonne } from '@/components/shared/AvatarInitiales';
 
 const dateFr = (d) => (d ? new Date(`${d}T00:00:00`).toLocaleDateString('fr-FR') : '—');
 const aujourdhui = () => { const d = new Date(); d.setMinutes(d.getMinutes() - d.getTimezoneOffset()); return d.toISOString().slice(0, 10); };
@@ -69,16 +70,16 @@ export default function Affectations() {
         {responsable && <Button onClick={() => setDialogue('nouvelle')}><Plus /> Nouvelle affectation</Button>}
       </PageHeader>
       <Tabs value={onglet} onValueChange={setOnglet}><TabsList><TabsTrigger value="actives">En cours</TabsTrigger><TabsTrigger value="toutes">Toutes</TabsTrigger></TabsList></Tabs>
-      <div className="overflow-x-auto rounded-lg border border-border">
+      <div className="carte overflow-x-auto">
         <table className="w-full text-sm">
-          <thead className="bg-muted/50 text-xs uppercase text-muted-foreground"><tr>
+          <thead className="bg-muted/50 text-[11px] uppercase tracking-wider text-muted-foreground"><tr>
             <th className="px-3 py-2 text-left">Bus</th><th className="px-3 py-2 text-left">Chauffeur</th><th className="px-3 py-2 text-left">Trajet</th><th className="px-3 py-2">Période</th><th className="px-2 py-2" />
           </tr></thead>
           <tbody>
             {lignes.length === 0 && <tr><td colSpan={5} className="px-3 py-8 text-center text-muted-foreground">Aucune affectation.</td></tr>}
             {lignes.map((a) => (
               <tr key={a.id} className="border-t border-border">
-                <td className="px-3 py-1.5 font-medium">Bus {a.bus_numero}</td><td className="px-3 py-1.5">{a.chauffeur_nom}</td><td className="px-3 py-1.5">{a.trajet_nom}</td>
+                <td className="px-3 py-1.5 font-medium">Bus {a.bus_numero}</td><td className="px-3 py-2"><CellulePersonne nom={a.chauffeur_nom} /></td><td className="px-3 py-1.5">{a.trajet_nom}</td>
                 <td className="px-3 py-1.5 text-center">{dateFr(a.date_debut)} → {a.date_fin ? dateFr(a.date_fin) : '…'} {a.active && <Badge variant="secondary">en cours</Badge>}{a.a_venir && <Badge variant="outline">à venir</Badge>}</td>
                 <td className="px-2 py-1.5 text-right">
                   {responsable && a.active && <Button size="sm" variant="ghost" onClick={() => setDialogue({ terminer: a })}>Terminer</Button>}

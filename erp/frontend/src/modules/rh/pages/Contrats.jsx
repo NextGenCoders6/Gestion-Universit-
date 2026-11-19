@@ -1,11 +1,11 @@
 import { useQuery } from '@tanstack/react-query';
-import { Badge } from '@/components/ui/badge';
 import DataTable from '@/components/shared/DataTable';
 import PageHeader from '@/components/shared/PageHeader';
 import Selecteur from '@/components/shared/Selecteur';
 import { useSearchParams } from 'react-router-dom';
 import * as api from '../api';
 import { dateFr, ETATS_CONTRAT, montant } from '../lib/format';
+import Pastille from '@/components/shared/Pastille';
 
 const VUES = [
   { valeur: 'echeance', libelle: 'À échéance (30 jours)' },
@@ -24,7 +24,7 @@ export default function Contrats() {
     { key: 'type', label: 'Type', render: (c) => (c.type === 'permanent' ? 'Permanent' : 'Vacataire') },
     { key: 'periode', label: 'Période', render: (c) => `${dateFr(c.date_debut)} → ${c.date_fin ? dateFr(c.date_fin) : 'indéterminée'}` },
     { key: 'montant', label: 'Rémunération', render: (c) => (c.type === 'permanent' ? `${montant(c.salaire_mensuel)} / mois` : `${montant(c.taux_horaire)} / h`) },
-    { key: 'etat', label: 'État', render: (c) => <Badge variant={c.etat === 'en_cours' ? 'secondary' : 'outline'}>{ETATS_CONTRAT[c.etat]}</Badge> },
+    { key: 'etat', label: 'État', render: (c) => <Pastille ton={{ en_cours: 'vert', a_venir: 'bleu' }[c.etat] ?? 'gris'}>{ETATS_CONTRAT[c.etat]}</Pastille> },
   ];
   return (
     <div className="space-y-4">
