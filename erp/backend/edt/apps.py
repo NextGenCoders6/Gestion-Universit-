@@ -7,6 +7,10 @@ class EdtConfig(AppConfig):
     verbose_name = 'Emploi du temps'
 
     def ready(self):
+        from core.lanceur import enregistrer
+        from edt.lanceur import resume as resume_lanceur
+        enregistrer('edt', resume_lanceur)
+
         from core.models import referentiel
         from edt.validation import refuser_archivage_avec_seances_futures
         if refuser_archivage_avec_seances_futures not in referentiel.VERIFICATIONS_ARCHIVAGE:
