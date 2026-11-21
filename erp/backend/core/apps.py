@@ -8,3 +8,5 @@ class CoreConfig(AppConfig):
 
     def ready(self):
         from core import checks  # noqa: F401  (enregistre les vérifications système)
+        from core.lanceur import enregistrer, resume_parametres
+        enregistrer('parametres', resume_parametres)
