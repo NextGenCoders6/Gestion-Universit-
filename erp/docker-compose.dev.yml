@@ -1,0 +1,38 @@
+# ERP UCCB — surcharge de développement : code monté dans les conteneurs, rechargement à chaud.
+#
+#   docker compose -f docker-compose.yml -f docker-compose.dev.yml up --build
+#   → http://localhost:5180   (Vite ; l'API est relayée vers Django dans le réseau Docker)
+#
+# Même base MySQL que la pile de production locale (volume `mysql`). nginx n'est pas lancé.
+services:
+  web:
+    # runserver recharge Django à chaque modification de erp/backend.
+    command: ["sh", "-c", "python manage.py migrate --noinput && python manage.py runserver 0.0.0.0:8000"]
+    environment:
+      DEBUG: "True"
+      # Vite relaie avec l'en-tête Host « web:8000 ».
+      ALLOWED_HOSTS: localhost,127.0.0.1,web
+      NUM_PROXIES: "0"
+    volumes:
+      - ./backend:/app
+
+  frontend:
+    image: node:22-alpine
+    working_dir: /erp/frontend
+    command: ["sh", "-c", "npm ci --no-audit --no-fund && npm run dev -- --host 0.0.0.0"]
+    environment:
+      ERP_API_URL: http://web:8000
+    volumes:
+      - ./frontend:/erp/frontend
+      # Dépendances dans un volume : node_modules ne pollue pas erp/frontend.
+      - node_modules:/erp/frontend/node_modules
+    ports:
+      - "${DEV_PORT:-5180}:5173"
+    depends_on:
+      - web
+
+  nginx:
+    profiles: ["production"]
+
+volumes:
+  node_modules:
