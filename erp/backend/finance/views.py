@@ -22,6 +22,7 @@ from finance import paiements, recus
 from finance.models import FraisScolarite, Operation, Paie, PaiementEtudiant, PaiementPaie, Tarif
 from finance.permissions import Encaissement, LectureFinance, ResponsableFinance, Tarifs
 from finance.serialisation import dossier_json, f, operation_json, paie_json, paiement_json
+from finance.tableau import indicateurs_frais
 
 
 def annee_demandee(request):
@@ -283,11 +284,7 @@ class TableauDeBordView(APIView):
 
     def get(self, request):
         annee = annee_demandee(request)
-        dossiers = list(FraisScolarite.objects.filter(inscription__annee=annee).exclude(
-            inscription__statut='abandonnee').prefetch_related('echeances')) if annee else []
-        attendus = sum((d.montant_du for d in dossiers), Decimal('0'))
-        encaisses = sum((min(d.montant_paye, d.montant_du) for d in dossiers), Decimal('0'))
-        retards = [service_frais.montant_en_retard(d, echeances=list(d.echeances.all())) for d in dossiers]
+        frais = indicateurs_frais(annee)
         # Un paiement annulé et sa contre-écriture s'effacent : ni recette ni dépense.
         operations = Operation.objects.filter(annule__isnull=True, annulation__isnull=True)
         if annee:
@@ -308,13 +305,13 @@ class TableauDeBordView(APIView):
         return Response({
             'annee': annee.pk if annee else None, 'annee_libelle': annee.libelle if annee else None,
             'recettes': f(recettes), 'depenses': f(depenses), 'solde': f(recettes - depenses),
-            'frais_attendus': f(attendus), 'frais_encaisses': f(encaisses),
-            'taux_recouvrement': round(float(encaisses / attendus * 100), 1) if attendus else 0.0,
-            'dossiers': len(dossiers), 'dossiers_en_retard': sum(1 for r in retards if r > 0),
-            'montant_en_retard': f(sum(retards, Decimal('0'))),
-            'dossiers_sans_tarif': sum(1 for d in dossiers if d.montant_du == 0 and not d.montant_ajuste),
-            'trop_percus': sum(1 for d in dossiers if d.trop_percu > 0),
-            'montant_trop_percu': f(sum((d.trop_percu for d in dossiers), Decimal('0'))),
+            'frais_attendus': f(frais['frais_attendus']), 'frais_encaisses': f(frais['frais_encaisses']),
+            'taux_recouvrement': frais['taux_recouvrement'] if frais['taux_recouvrement'] is not None else 0.0,
+            'dossiers': frais['dossiers'], 'dossiers_en_retard': frais['dossiers_en_retard'],
+            'montant_en_retard': f(frais['montant_en_retard']),
+            'dossiers_sans_tarif': frais['dossiers_sans_tarif'],
+            'trop_percus': frais['trop_percus'],
+            'montant_trop_percu': f(frais['montant_trop_percu']),
             'paie_en_attente': f(en_attente),
             'tresorerie': [{'mois': f'{a:04d}-{m:02d}', 'recettes': f(par_mois.get((a, m), (0, 0))[0]),
                             'depenses': f(par_mois.get((a, m), (0, 0))[1])} for a, m in mois],

@@ -7,6 +7,10 @@ class RhConfig(AppConfig):
     verbose_name = 'Ressources humaines'
 
     def ready(self):
+        from core.lanceur import enregistrer
+        from rh.lanceur import resume as resume_lanceur
+        enregistrer('rh', resume_lanceur)
+
         from edt import models as edt_models
         from rh.vacations import refuser_modification_si_confirmee
         if refuser_modification_si_confirmee not in edt_models.VERIFICATIONS_AFFECTATION:

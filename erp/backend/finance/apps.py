@@ -7,6 +7,10 @@ class FinanceConfig(AppConfig):
     verbose_name = 'Finance'
 
     def ready(self):
+        from core.lanceur import enregistrer
+        from finance.lanceur import resume as resume_lanceur
+        enregistrer('finance', resume_lanceur)
+
         from finance.frais import creer_dossier
         from scolarite import inscriptions
         if creer_dossier not in inscriptions.APRES_INSCRIPTION:
