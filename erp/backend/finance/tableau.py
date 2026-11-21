@@ -11,7 +11,7 @@ def indicateurs_frais(annee):
     `taux_recouvrement` vaut None quand rien n'est attendu (taux incalculable).
     """
     dossiers = list(FraisScolarite.objects.filter(inscription__annee=annee).exclude(
-        inscription__statut='abandonnee').prefetch_related('echeances')) if annee else []
+        inscription__statut='abandonnee').order_by().prefetch_related('echeances')) if annee else []
     attendus = sum((d.montant_du for d in dossiers), Decimal('0'))
     encaisses = sum((min(d.montant_paye, d.montant_du) for d in dossiers), Decimal('0'))
     retards = [service_frais.montant_en_retard(d, echeances=list(d.echeances.all())) for d in dossiers]

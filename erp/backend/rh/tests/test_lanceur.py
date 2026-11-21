@@ -1,5 +1,6 @@
 """Résumé RH du launchpad : contrats arrivant à échéance sous 30 jours."""
 from datetime import timedelta
+from unittest.mock import patch
 
 from django.core.cache import cache
 from django.test import TestCase
@@ -31,3 +32,14 @@ class ResumeRhTests(TestCase):
     def test_rh_sans_echeance(self):
         e = tuile(self.lecteur)
         self.assertEqual((e['valeur'], e['ton']), (0, 'normal'))
+
+    def test_rh_mis_en_cache(self):
+        from rh import views
+        with patch('rh.views.lignes_vacations', wraps=views.lignes_vacations) as calcul:
+            tuile(self.lecteur)
+            tuile(self.lecteur)
+        self.assertEqual(calcul.call_count, 1)
+
+    def test_rh_ignore_les_parametres_de_l_url(self):
+        e = next(x for x in self.lecteur.get(URL + '?annee=abc&faculte=99').data if x['module'] == 'rh')
+        self.assertEqual(e['valeur'], 0)

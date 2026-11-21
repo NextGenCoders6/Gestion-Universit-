@@ -50,3 +50,9 @@ class ResumeEdtTests(TestCase):
         sans = User.objects.create_user('sans', password='x')
         definir_droits(sans, ['parametres_responsable'])
         self.assertNotIn('edt', tuiles(sans))
+
+    def test_brouillons_a_venir_comptes_au_dela_de_la_semaine(self, _jour):
+        m = self.m
+        seance_brute(m.algo, m.l1, m.ens, jour=date(2026, 11, 26), statut='brouillon')   # semaine suivante
+        seance_brute(m.algo, m.l1, m.ens, jour=date(2026, 11, 10), statut='brouillon')   # passé : ignoré
+        self.assertEqual(tuiles(self.responsable)['edt']['detail'], '2 brouillons à publier')

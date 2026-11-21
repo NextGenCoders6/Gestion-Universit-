@@ -1,6 +1,11 @@
 """Résumé Finance du launchpad : taux de recouvrement des frais de l'année en cours."""
+from unittest.mock import patch
+
+from django.core.cache import cache
+
 from core.tests import fabriques as f
 from finance import paiements
+from finance import tableau
 from finance.tests.test_api import Base
 
 URL = '/api/core/lanceur/'
@@ -11,6 +16,10 @@ def tuile(c):
 
 
 class ResumeFinanceTests(Base):
+    def setUp(self):
+        super().setUp()
+        cache.clear()
+
     def test_finance_taux_et_retards(self):
         paiements.encaisser(self.a, '300000', 'especes')      # attendus 3 000 000 (deux dossiers L1), encaissés 300 000
         e = tuile(self.util)
@@ -33,3 +42,9 @@ class ResumeFinanceTests(Base):
         self.m.annee.save()
         f.annee('2027-2028', en_cours=True)
         self.assertEqual(self.util.get('/api/finance/tableau-de-bord/').data['taux_recouvrement'], 0.0)
+
+    def test_resume_mis_en_cache(self):
+        with patch('finance.lanceur.indicateurs_frais', wraps=tableau.indicateurs_frais) as calcul:
+            tuile(self.util)
+            tuile(self.resp)
+        self.assertEqual(calcul.call_count, 1)

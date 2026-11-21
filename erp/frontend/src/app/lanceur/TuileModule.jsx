@@ -1,4 +1,5 @@
-/** Tuile du launchpad (style SAP Fiori) : titre, ce que compte le chiffre, le chiffre, une ligne de détail. */
+/** Tuile du launchpad (style SAP Fiori) : titre, ce que compte le chiffre, le chiffre, une ligne de détail.
+ *  Ton alerte en ambre foncé (amber-700, ≈ 5:1 sur blanc) : --warning est trop clair pour du texte. */
 import { Link } from 'react-router-dom';
 import { cn } from '@/lib/utils';
 
@@ -13,7 +14,7 @@ function Chiffre({ valeur, unite, alerte, chargement }) {
   if (valeur === null) return <span className={GRIS}>—</span>;
   return (
     <span className="flex items-baseline gap-1">
-      <span className={cn('chiffres text-[28px] font-semibold leading-none tracking-tight', alerte ? 'text-warning' : 'text-foreground')}>
+      <span className={cn('chiffres text-[28px] font-semibold leading-none tracking-tight', alerte ? 'text-amber-700' : 'text-foreground')}>
         {nombre(valeur)}
       </span>
       {unite && <span className="text-sm font-medium text-muted-foreground">{unite}</span>}
@@ -37,7 +38,7 @@ export default function TuileModule({ titre, sousTitre, valeur, unite, detail, t
       </span>
       <span className="space-y-1">
         <Chiffre valeur={valeur} unite={unite} alerte={alerte} chargement={chargement} />
-        {detail && <span className={cn('block text-xs leading-snug', alerte ? 'text-warning' : 'text-muted-foreground')}>{detail}</span>}
+        {detail && <span className={cn('block text-xs leading-snug', alerte ? 'text-amber-700' : 'text-muted-foreground')}>{detail}</span>}
       </span>
     </Link>
   );

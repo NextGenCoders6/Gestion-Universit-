@@ -55,11 +55,12 @@ describe('Lanceur', () => {
     expect(screen.getByText('NGOMA Paul')).toBeInTheDocument();
   });
 
-  it('ton alerte en couleur d’avertissement', async () => {
+  it('ton alerte en couleur d’avertissement foncée (contraste AA sur blanc)', async () => {
     connecter(modulesFinanceRh);
     rendre();
-    expect(await screen.findByText('26,9')).toHaveClass('text-warning');
-    expect(screen.getByText('0')).not.toHaveClass('text-warning');
+    expect(await screen.findByText('26,9')).toHaveClass('text-amber-700');
+    expect(screen.getByText('24 dossiers en retard')).toHaveClass('text-amber-700');
+    expect(screen.getByText('0')).not.toHaveClass('text-amber-700');
   });
 
   it('erreur du serveur : tuile sans chiffre, lien actif', async () => {
