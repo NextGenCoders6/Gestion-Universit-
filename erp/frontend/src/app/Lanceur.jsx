@@ -2,6 +2,7 @@ import { Link, Navigate } from 'react-router-dom';
 import { ArrowRightCircle, Inbox, UserCircle } from '@/components/ui/icons';
 import logoUccb from '@/assets/login/logo-uccb.svg';
 import useAuthStore, { aRole } from '@/store/authStore';
+import { dateLongue, salutation } from '@/lib/dates';
 import MenuUtilisateur from './MenuUtilisateur';
 import { COULEUR_MON_ESPACE, espacePersonnelSeul, modulesVisibles, styleModule } from './modules';
 
@@ -26,16 +27,6 @@ function Tuile({ to, libelle, description, icone: Icone, couleur }) {
       </span>
     </Link>
   );
-}
-
-function dateDuJour() {
-  const texte = new Intl.DateTimeFormat('fr-FR', { weekday: 'long', day: 'numeric', month: 'long', year: 'numeric' }).format(new Date());
-  return texte.charAt(0).toUpperCase() + texte.slice(1);
-}
-
-function salutation() {
-  const h = new Date().getHours();
-  return h < 18 ? 'Bonjour' : 'Bonsoir';
 }
 
 /** Accueil après connexion : une tuile par module autorisé, comme le lanceur d'Odoo. */
@@ -67,9 +58,9 @@ export default function Lanceur() {
         <div aria-hidden className="absolute inset-0 bg-[radial-gradient(ellipse_at_top_right,hsl(var(--primary)/0.55),transparent_60%)]" />
         <div aria-hidden className="absolute -bottom-24 -left-16 size-72 rounded-full bg-white/[0.04]" />
         <div className="relative mx-auto max-w-6xl px-4 pb-24 pt-10 md:px-8">
-          <p className="text-sm font-medium text-sidebar-muted">{dateDuJour()}</p>
+          <p className="text-sm font-medium text-sidebar-muted">{dateLongue(new Date())}</p>
           <h2 className="mt-2 text-3xl font-semibold tracking-tight md:text-4xl">
-            {`${salutation()}, ${user?.nom_complet ?? ''}`}
+            {`${salutation(new Date())}, ${user?.nom_complet ?? ''}`}
           </h2>
           <p className="mt-2 max-w-xl text-sidebar-muted">Choisissez un module pour commencer. Vous ne voyez que ceux qui vous sont attribués.</p>
         </div>
