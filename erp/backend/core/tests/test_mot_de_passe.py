@@ -78,3 +78,77 @@ class DemandeTests(TestCase):
         self.demander('divine.moukala')
         self.assertTrue(JournalAudit.objects.filter(module='core', action='demande_reinitialisation',
                                                     description='Divine.Moukala').exists())
+
+
+URL_REINIT = '/api/core/mot-de-passe/reinitialisation/'
+NOUVEAU = 'Nouveau-UCCB-2027!'
+LIEN_INVALIDE = {'detail': "Ce lien n'est plus valable. Faites une nouvelle demande."}
+
+
+class ReinitialisationTests(TestCase):
+    def setUp(self):
+        cache.clear()
+        self.user = User.objects.create_user('divine', email='divine@example.org', password=MDP)
+        self.anonyme = APIClient()
+
+    def lien(self):
+        from core.api.mot_de_passe import lien_reinitialisation
+        self.user.refresh_from_db()
+        uid, jeton = lien_reinitialisation(self.user).rstrip('/').split('/')[-2:]
+        return uid, jeton
+
+    def reinitialiser(self, uid, jeton, password=NOUVEAU):
+        return self.anonyme.post(URL_REINIT, {'uid': uid, 'jeton': jeton, 'password': password}, format='json')
+
+    def connecter(self, password):
+        return self.anonyme.post('/api/core/token/', {'username': 'divine', 'password': password}, format='json')
+
+    def test_succes_puis_connexion(self):
+        r = self.reinitialiser(*self.lien())
+        self.assertEqual(r.status_code, 200, r.data)
+        self.assertEqual(r.data, {'detail': 'Mot de passe modifié. Connectez-vous.'})
+        self.assertEqual(self.connecter(NOUVEAU).status_code, 200)
+        self.assertEqual(self.connecter(MDP).status_code, 401)
+
+    def test_lien_utilise_deux_fois(self):
+        lien = self.lien()
+        self.assertEqual(self.reinitialiser(*lien).status_code, 200)
+        r = self.reinitialiser(*lien, password='Encore-UCCB-2028!')
+        self.assertEqual(r.status_code, 400)
+        self.assertEqual(r.data, LIEN_INVALIDE)
+
+    def test_lien_apres_reconnexion(self):
+        lien = self.lien()
+        self.assertEqual(self.connecter(MDP).status_code, 200)
+        self.assertEqual(self.reinitialiser(*lien).data, LIEN_INVALIDE)
+
+    def test_lien_expire(self):
+        from datetime import datetime, timedelta
+        lien = self.lien()
+        plus_tard = datetime.now() + timedelta(hours=1, minutes=1)
+        with patch('django.contrib.auth.tokens.PasswordResetTokenGenerator._now', return_value=plus_tard):
+            self.assertEqual(self.reinitialiser(*lien).data, LIEN_INVALIDE)
+
+    def test_uid_invalide(self):
+        _, jeton = self.lien()
+        for uid in ('zz', 'OTk5OQ', ''):
+            r = self.reinitialiser(uid, jeton)
+            self.assertEqual(r.status_code, 400, uid)
+            self.assertEqual(r.data, LIEN_INVALIDE, uid)
+
+    def test_mot_de_passe_faible(self):
+        r = self.reinitialiser(*self.lien(), password='123')
+        self.assertEqual(r.status_code, 400)
+        self.assertIn('password', r.data)
+        self.assertEqual(self.connecter(MDP).status_code, 200)
+
+    def test_sessions_fermees(self):
+        refresh = self.connecter(MDP).data['refresh']
+        self.assertEqual(self.reinitialiser(*self.lien()).status_code, 200)
+        r = self.anonyme.post('/api/core/token/refresh/', {'refresh': refresh}, format='json')
+        self.assertEqual(r.status_code, 401)
+
+    def test_journal(self):
+        self.reinitialiser(*self.lien())
+        self.assertTrue(JournalAudit.objects.filter(module='core', action='reinitialisation_mot_de_passe',
+                                                    description='divine').exists())
