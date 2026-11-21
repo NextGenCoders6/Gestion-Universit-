@@ -26,6 +26,21 @@ L'ERP répond sur <http://localhost:8080>.
 python3 -c "import secrets; print(secrets.token_urlsafe(50))"
 ```
 
+## Développement (rechargement à chaud)
+
+`docker-compose.dev.yml` monte `erp/backend` et `erp/frontend` dans les conteneurs : Django tourne avec `runserver`
+(`DEBUG=True`) et l'interface avec le serveur Vite. nginx n'est pas lancé.
+
+```bash
+cd erp
+docker compose stop nginx      # si la pile de production tourne déjà
+docker compose -f docker-compose.yml -f docker-compose.dev.yml up -d --build
+```
+
+L'interface répond sur <http://localhost:5180> (`DEV_PORT` dans `erp/.env` pour changer de port) ; Vite relaie
+`/api` et `/media` vers Django. Les deux piles partagent la même base (volume `mysql`). Pour revenir en production :
+`docker compose up -d --build`.
+
 ## Premier compte administrateur
 
 ```bash
