@@ -6,8 +6,9 @@
  * « disponible dans une prochaine version ».
  *
  * couleur : teinte d'accent du module (triplet HSL, posé dans --module par ModuleShell).
- * menu : [{ chemin (relatif au module), libelle, icone, niveaux? }]
- *        `niveaux` absent = visible pour tout niveau du module.
+ * menu : [{ chemin (relatif au module), libelle, icone, niveaux?, rapide? }]
+ *        `niveaux` absent = visible pour tout niveau du module ;
+ *        `rapide` = proposé dans les accès rapides du launchpad.
  */
 import {
   ArrowRightCircle, BarChart3, BookOpen, CalendarDays, Clock, FileSpreadsheet, FileText, GraduationCap, Layers, List, MapPin,
@@ -19,12 +20,11 @@ export const REGISTRE = [
     code: 'scolarite',
     couleur: '221 83% 53%',
     libelle: 'Scolarité',
-    description: 'Inscriptions, notes, délibérations et documents officiels.',
     icone: GraduationCap,
     chemin: '/scolarite',
     menu: [
       { chemin: 'etudiants', libelle: 'Étudiants', icone: Users },
-      { chemin: 'saisie', libelle: 'Saisie des notes', icone: Pencil, niveaux: ['faculte'] },
+      { chemin: 'saisie', libelle: 'Saisie des notes', icone: Pencil, niveaux: ['faculte'], rapide: true },
       { chemin: 'deliberation', libelle: 'Délibérations', icone: FileSpreadsheet, niveaux: ['faculte'] },
       { chemin: 'promotion', libelle: 'Promotion et orientation', icone: ArrowRightCircle, niveaux: ['faculte'] },
       { chemin: 'vacations', libelle: 'Vacations', icone: Clock, niveaux: ['faculte'] },
@@ -34,12 +34,11 @@ export const REGISTRE = [
     code: 'edt',
     couleur: '192 82% 38%',
     libelle: 'Emploi du temps',
-    description: 'Planning des séances, affectations et progression des enseignements.',
     icone: CalendarDays,
     chemin: '/edt',
     menu: [
       { chemin: 'planning', libelle: 'Planning', icone: CalendarDays },
-      { chemin: 'seances', libelle: 'Séances', icone: List },
+      { chemin: 'seances', libelle: 'Séances', icone: List, rapide: true },
       { chemin: 'enseignements', libelle: 'Enseignements', icone: BookOpen },
       { chemin: 'referents', libelle: 'Référents de classes', icone: UserCheck, niveaux: ['responsable', 'perimetre', 'utilisateur'] },
     ],
@@ -48,7 +47,6 @@ export const REGISTRE = [
     code: 'rh',
     couleur: '262 62% 56%',
     libelle: 'Ressources humaines',
-    description: 'Enseignants, personnel, contrats et vacations.',
     icone: Users,
     chemin: '/rh',
     menu: [
@@ -56,19 +54,18 @@ export const REGISTRE = [
       { chemin: 'enseignants', libelle: 'Enseignants', icone: GraduationCap },
       { chemin: 'personnel', libelle: 'Personnel', icone: Users },
       { chemin: 'contrats', libelle: 'Contrats', icone: FileText },
-      { chemin: 'vacations', libelle: 'Vacations', icone: Clock },
+      { chemin: 'vacations', libelle: 'Vacations', icone: Clock, rapide: true },
     ],
   },
   {
     code: 'finance',
     couleur: '36 88% 44%',
     libelle: 'Finance',
-    description: 'Frais de scolarité, paie et journal des opérations.',
     icone: BarChart3,
     chemin: '/finance',
     menu: [
       { chemin: 'tableau-de-bord', libelle: 'Tableau de bord', icone: BarChart3 },
-      { chemin: 'frais', libelle: 'Frais étudiants', icone: GraduationCap },
+      { chemin: 'frais', libelle: 'Frais étudiants', icone: GraduationCap, rapide: true },
       { chemin: 'paie-enseignants', libelle: 'Paie des enseignants', icone: BookOpen },
       { chemin: 'paie-personnel', libelle: 'Paie du personnel', icone: Users },
       { chemin: 'journal', libelle: 'Journal', icone: List },
@@ -79,14 +76,13 @@ export const REGISTRE = [
     code: 'logistique',
     couleur: '18 85% 50%',
     libelle: 'Logistique',
-    description: 'Bus, trajets et affectations des chauffeurs.',
     icone: MapPin,
     chemin: '/logistique',
     menu: [
       { chemin: 'tableau-de-bord', libelle: 'Tableau de bord', icone: BarChart3 },
       { chemin: 'bus', libelle: 'Bus', icone: MapPin },
       { chemin: 'trajets', libelle: 'Trajets', icone: List },
-      { chemin: 'affectations', libelle: 'Affectations', icone: UserCheck },
+      { chemin: 'affectations', libelle: 'Affectations', icone: UserCheck, rapide: true },
       { chemin: 'couts', libelle: 'Coûts', icone: FileSpreadsheet },
     ],
   },
@@ -94,7 +90,6 @@ export const REGISTRE = [
     code: 'parametres',
     couleur: '215 16% 42%',
     libelle: 'Paramètres',
-    description: 'Utilisateurs et droits, référentiel académique, établissement.',
     icone: SlidersHorizontal,
     chemin: '/parametres',
     menu: [
@@ -102,7 +97,7 @@ export const REGISTRE = [
       { chemin: 'classes', libelle: 'Classes', icone: School },
       { chemin: 'enseignement', libelle: 'Enseignements', icone: BookOpen },
       { chemin: 'personnes', libelle: 'Personnes', icone: Users },
-      { chemin: 'utilisateurs', libelle: 'Utilisateurs et droits', icone: UserCheck },
+      { chemin: 'utilisateurs', libelle: 'Utilisateurs et droits', icone: UserCheck, rapide: true },
       { chemin: 'tarifs', libelle: 'Tarifs', icone: Tag },
       { chemin: 'etablissement', libelle: 'Établissement', icone: SlidersHorizontal },
       { chemin: 'audit', libelle: 'Journal d’audit', icone: FileText },

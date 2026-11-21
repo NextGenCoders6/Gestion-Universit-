@@ -1,73 +1,65 @@
-import { Link, Navigate } from 'react-router-dom';
-import { ArrowRightCircle, Inbox, UserCircle } from '@/components/ui/icons';
+/**
+ * Launchpad (écran des modules), sur le modèle de SAP Fiori : une tuile sobre par module, qui porte un
+ * chiffre vivant calculé par le serveur dans le périmètre de la personne (GET /api/core/lanceur/), puis
+ * une ligne d'accès rapides selon les droits.
+ */
+import { useQuery } from '@tanstack/react-query';
+import { Navigate } from 'react-router-dom';
+import { Inbox, UserCircle } from '@/components/ui/icons';
 import logoUccb from '@/assets/login/logo-uccb.svg';
+import { lireLanceur } from '@/api/lanceur';
+import { dateLongue } from '@/lib/dates';
 import useAuthStore, { aRole } from '@/store/authStore';
-import { dateLongue, salutation } from '@/lib/dates';
+import AccesRapides from './lanceur/AccesRapides';
+import TuileModule from './lanceur/TuileModule';
 import MenuUtilisateur from './MenuUtilisateur';
-import { COULEUR_MON_ESPACE, espacePersonnelSeul, modulesVisibles, styleModule } from './modules';
+import { CANVAS_MON_ESPACE, COULEUR_MON_ESPACE, espacePersonnelSeul, menuVisible, modulesVisibles } from './modules';
 
-function Tuile({ to, libelle, description, icone: Icone, couleur }) {
+function Groupe({ titre, children }) {
   return (
-    <Link
-      to={to}
-      style={styleModule({ couleur })}
-      className="carte-interactive group relative flex flex-col gap-4 overflow-hidden p-6 focus:outline-none focus-visible:ring-2 focus-visible:ring-ring"
-    >
-      <span aria-hidden className="absolute inset-x-0 top-0 h-1 bg-module" />
-      <span aria-hidden className="pointer-events-none absolute -right-10 -top-10 size-32 rounded-full bg-module/[0.07] transition-transform duration-300 group-hover:scale-125" />
-      <span className="relative flex size-12 items-center justify-center rounded-xl bg-module/10 text-module ring-1 ring-module/20">
-        <Icone className="size-6" />
-      </span>
-      <span className="relative">
-        <span className="block text-base font-semibold tracking-tight text-foreground">{libelle}</span>
-        {description && <span className="mt-1 block text-sm leading-relaxed text-muted-foreground">{description}</span>}
-      </span>
-      <span className="relative mt-auto flex items-center gap-1 text-sm font-medium text-module opacity-0 transition-opacity group-hover:opacity-100">
-        Ouvrir <ArrowRightCircle className="size-4" />
-      </span>
-    </Link>
+    <section className="space-y-3">
+      <h2 className="text-xs font-semibold uppercase tracking-wide text-muted-foreground">{titre}</h2>
+      <div className="grid grid-cols-2 gap-3 sm:grid-cols-[repeat(auto-fill,11rem)] sm:gap-4">{children}</div>
+    </section>
   );
 }
 
-/** Accueil après connexion : une tuile par module autorisé, comme le lanceur d'Odoo. */
 export default function Lanceur() {
   const user = useAuthStore((state) => state.user);
   const espacePersonnel = useAuthStore((state) => aRole(state, 'etudiant') || aRole(state, 'enseignant'));
   const modules = modulesVisibles(user);
-  const vide = modules.length === 0 && !espacePersonnel;
+  const resumes = useQuery({ queryKey: ['lanceur'], queryFn: lireLanceur, enabled: modules.length > 0 });
 
   // Rien d'autre à choisir que son espace personnel : on y va directement.
   if (espacePersonnelSeul(user)) return <Navigate to="/moi" replace />;
 
+  const vide = modules.length === 0 && !espacePersonnel;
+  const parModule = Object.fromEntries((resumes.data ?? []).map((r) => [r.module, r]));
+  // undefined pendant le chargement (pas encore de chiffre), null si le serveur n'en donne pas.
+  const valeurDe = (r) => {
+    if (resumes.isError) return null;
+    if (!r) return resumes.isPending ? undefined : null;
+    return r.valeur;
+  };
+  const niveaux = (code) => user?.modules?.find((m) => m.code === code)?.niveaux ?? [];
+  const rapides = modules.flatMap((m) => menuVisible(m, niveaux(m.code))
+    .filter((item) => item.rapide)
+    .map((item) => ({ libelle: item.libelle, to: `${m.chemin}/${item.chemin}` })));
+
   return (
-    <div className="min-h-dvh bg-canvas">
-      <header className="sticky top-0 z-40 flex h-16 items-center justify-between border-b border-white/10 bg-sidebar px-4 text-sidebar-foreground md:px-8">
-        <div className="flex items-center gap-3">
-          <span className="flex size-9 items-center justify-center rounded-lg bg-white p-1 shadow-sm">
-            <img src={logoUccb} alt="" className="size-full" />
-          </span>
-          <div className="leading-tight">
-            <h1 className="text-[15px] font-bold tracking-tight">UCCB</h1>
-            <p className="text-[11px] text-sidebar-muted">Système de gestion de l’université</p>
-          </div>
+    <div className="min-h-dvh bg-canvas" style={{ '--canvas': CANVAS_MON_ESPACE }}>
+      <header className="sticky top-0 z-40 flex h-14 items-center justify-between gap-3 border-b border-border bg-card px-4 md:px-8">
+        <div className="flex min-w-0 items-center gap-2.5">
+          <img src={logoUccb} alt="" className="size-8 shrink-0" />
+          <h1 className="truncate text-[15px] font-semibold tracking-tight text-foreground">UCCB · ERP</h1>
         </div>
-        <div className="rounded-lg bg-white text-foreground"><MenuUtilisateur /></div>
+        <div className="flex items-center gap-4">
+          <p className="hidden text-sm text-muted-foreground sm:block">{dateLongue(new Date())}</p>
+          <MenuUtilisateur />
+        </div>
       </header>
 
-      <section className="relative overflow-hidden bg-sidebar text-sidebar-foreground">
-        <div aria-hidden className="absolute inset-0 bg-[radial-gradient(ellipse_at_top_right,hsl(var(--primary)/0.55),transparent_60%)]" />
-        <div aria-hidden className="absolute -bottom-24 -left-16 size-72 rounded-full bg-white/[0.04]" />
-        <div className="relative mx-auto max-w-6xl px-4 pb-24 pt-10 md:px-8">
-          <p className="text-sm font-medium text-sidebar-muted">{dateLongue(new Date())}</p>
-          <h2 className="mt-2 text-3xl font-semibold tracking-tight md:text-4xl">
-            {`${salutation(new Date())}, ${user?.nom_complet ?? ''}`}
-          </h2>
-          <p className="mt-2 max-w-xl text-sidebar-muted">Choisissez un module pour commencer. Vous ne voyez que ceux qui vous sont attribués.</p>
-        </div>
-      </section>
-
-      <main className="relative mx-auto -mt-14 max-w-6xl px-4 pb-12 md:px-8">
-        <h2 className="mb-4 text-xs font-semibold uppercase tracking-[0.14em] text-white/80">Vos modules</h2>
+      <main className="mx-auto max-w-6xl space-y-8 px-4 py-6 md:px-8 md:py-8">
         {vide ? (
           <div className="carte flex flex-col items-center gap-3 py-16 text-center">
             <Inbox className="size-10 text-muted-foreground" />
@@ -77,15 +69,25 @@ export default function Lanceur() {
           </div>
         ) : (
           <>
-            <div className="grid grid-cols-1 gap-5 sm:grid-cols-2 lg:grid-cols-3">
-              {espacePersonnel && (
-                <Tuile to="/moi" libelle="Mon espace" description="Votre planning, vos notes et vos documents."
+            {espacePersonnel && (
+              <Groupe titre="Mon espace">
+                <TuileModule to="/moi" titre="Mon espace" sousTitre="Planning, notes, documents"
                   icone={UserCircle} couleur={COULEUR_MON_ESPACE} />
-              )}
-              {modules.map((m) => (
-                <Tuile key={m.code} to={m.chemin} libelle={m.libelle} description={m.description} icone={m.icone} couleur={m.couleur} />
-              ))}
-            </div>
+              </Groupe>
+            )}
+            {modules.length > 0 && (
+              <Groupe titre="Modules">
+                {modules.map((m) => {
+                  const r = parModule[m.code];
+                  return (
+                    <TuileModule key={m.code} to={m.chemin} titre={m.libelle} icone={m.icone} couleur={m.couleur}
+                      chargement={resumes.isPending} sousTitre={r?.libelle} unite={r?.unite} detail={r?.detail} ton={r?.ton}
+                      valeur={valeurDe(r)} />
+                  );
+                })}
+              </Groupe>
+            )}
+            <AccesRapides liens={rapides} />
           </>
         )}
       </main>
