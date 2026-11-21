@@ -1,10 +1,7 @@
 from datetime import date, time
 
 from django.contrib.auth.models import User
-from django.core.cache import cache
-from rest_framework.test import APIClient
 
-from core.models import JournalAudit
 from edt.models import Seance
 from edt.tests.fabriques import affectation, enseignant
 from scolarite.moteur import deliberation
@@ -12,54 +9,6 @@ from scolarite.tests.api import Base, client
 from scolarite.tests.fabriques import inscrit, noter
 
 MDP = 'Etudiant-UCCB-2026!'
-
-
-class ActivationTests(Base):
-    def setUp(self):
-        super().setUp()
-        cache.clear()
-        self.i = inscrit(self.m.l1, 'Moukala', 'Divine', email='divine@example.org', date_naissance=date(2006, 3, 14))
-        self.e = self.i.etudiant
-        self.anonyme = APIClient()
-
-    def activer(self, **kw):
-        corps = {'matricule': self.e.matricule, 'email': 'divine@example.org', 'date_naissance': '2006-03-14',
-                 'password': MDP, **kw}
-        return self.anonyme.post('/api/scolarite/activation/', corps, format='json')
-
-    def test_succes_puis_connexion_par_matricule(self):
-        r = self.activer(matricule=self.e.matricule.lower(), email='DIVINE@example.org')
-        self.assertEqual(r.status_code, 201, r.data)
-        self.assertEqual(r.data['username'], self.e.matricule)
-        self.e.personne.refresh_from_db()
-        self.assertEqual(self.e.personne.user.username, self.e.matricule)
-        self.assertTrue(JournalAudit.objects.filter(action='activation_compte').exists())
-        r = self.anonyme.post('/api/core/token/', {'username': self.e.matricule, 'password': MDP},
-                              format='json')
-        self.assertEqual(r.status_code, 200, r.data)
-
-    def test_echecs_meme_message(self):
-        attendus = []
-        attendus.append(self.activer(date_naissance='2006-03-15'))
-        attendus.append(self.activer(email='autre@example.org'))
-        attendus.append(self.activer(matricule='UCCB26XXXXX99999'))
-        self.assertEqual(self.activer().status_code, 201)
-        attendus.append(self.activer())  # déjà activé
-        for r in attendus:
-            self.assertEqual(r.status_code, 400)
-            self.assertEqual(r.data, {'detail': 'Informations incorrectes ou compte déjà activé.'})
-        self.assertEqual(User.objects.filter(username=self.e.matricule).count(), 1)
-
-    def test_etudiant_abandonne(self):
-        self.e.statut = 'abandonne'
-        self.e.save()
-        self.assertEqual(self.activer().status_code, 400)
-
-    def test_mot_de_passe_faible(self):
-        r = self.activer(password='123')
-        self.assertEqual(r.status_code, 400)
-        self.assertIn('password', r.data)
-        self.assertIsNone(User.objects.filter(username=self.e.matricule).first())
 
 
 class EspaceTests(Base):

@@ -28,7 +28,7 @@ async function remplir(user, { confirmation = 'Etudiant-UCCB-2026!' } = {}) {
   await user.click(screen.getByRole('button', { name: 'Activer mon compte' }));
 }
 
-describe('Activation du compte étudiant', () => {
+describe('Activation du compte', () => {
   beforeEach(() => { vi.resetAllMocks(); sessionStorage.clear(); });
 
   it('succès : retour à la connexion avec un message', async () => {
@@ -37,7 +37,7 @@ describe('Activation du compte étudiant', () => {
     rendre();
     await remplir(user);
     expect(await screen.findByText('Page de connexion')).toBeInTheDocument();
-    expect(apiClient.post).toHaveBeenCalledWith('/scolarite/activation/', {
+    expect(apiClient.post).toHaveBeenCalledWith('/core/activation/', {
       matricule: 'UCCB26MOUDI00001', email: 'divine@example.org', date_naissance: '2006-03-14', password: 'Etudiant-UCCB-2026!' });
     expect(lireMessageConnexion()).toMatch(/Compte activé/);
   });

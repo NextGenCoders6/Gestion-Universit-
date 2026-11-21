@@ -2,6 +2,7 @@ from django.urls import include, path
 from rest_framework.routers import DefaultRouter
 
 from core.api import referentiel as ref
+from core.api.activation import ActivationView
 from core.api.etablissement import EtablissementView
 from core.api.personnes import PersonneViewSet
 from core.api.utilisateurs import AuditViewSet, ModulesView, UtilisateurViewSet
@@ -27,6 +28,7 @@ urlpatterns = [
     path('token/refresh/', RenouvellementView.as_view(), name='core_token_refresh'),
     path('deconnexion/', DeconnexionView.as_view(), name='core_deconnexion'),
     path('moi/', MoiView.as_view(), name='core_moi'),
+    path('activation/', ActivationView.as_view(), name='core_activation'),
     path('modules/', ModulesView.as_view(), name='core_modules'),
     path('etablissement/', EtablissementView.as_view(), name='core_etablissement'),
     path('', include(router.urls)),

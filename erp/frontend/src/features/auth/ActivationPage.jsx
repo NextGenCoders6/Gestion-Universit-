@@ -1,5 +1,6 @@
-// Première connexion d'un étudiant : il active son compte avec les informations
-// enregistrées par le secrétariat, puis choisit son mot de passe.
+// Première connexion d'un étudiant ou d'un enseignant : il active son compte avec les
+// informations enregistrées par le secrétariat ou les ressources humaines, puis choisit
+// son mot de passe.
 import { forwardRef, useState } from 'react';
 import { useForm } from 'react-hook-form';
 import { Link, useNavigate } from 'react-router-dom';
@@ -37,7 +38,7 @@ export default function ActivationPage() {
     setEnvoi(true);
     setErreurs({ champs: {}, global: null });
     try {
-      const { data } = await apiClient.post('/scolarite/activation/', { matricule: matricule.trim(), email, date_naissance, password });
+      const { data } = await apiClient.post('/core/activation/', { matricule: matricule.trim(), email, date_naissance, password });
       noterMessageConnexion(`${data.detail} Identifiant : ${data.username}`);
       navigate('/login', { replace: true });
     } catch (e) {
@@ -54,8 +55,8 @@ export default function ActivationPage() {
         <div className="mb-6 flex items-center gap-3">
           <img src={logoUccb} alt="" className="size-12" />
           <div>
-            <h1 className="text-xl font-bold text-uccb-ink">Activer mon compte étudiant</h1>
-            <p className="text-sm text-[#4A4741]">Saisissez les informations données au secrétariat lors de votre inscription.</p>
+            <h1 className="text-xl font-bold text-uccb-ink">Activer mon compte</h1>
+            <p className="text-sm text-[#4A4741]">Saisissez les informations données au secrétariat ou aux ressources humaines.</p>
           </div>
         </div>
         <form className="space-y-4" noValidate onSubmit={handleSubmit(activer)}>

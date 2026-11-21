@@ -43,6 +43,28 @@ class LoginCompteRateThrottle(SimpleRateThrottle):
         }
 
 
+class ParChampRateThrottle(SimpleRateThrottle):
+    """Même plafond que la connexion, par couple (adresse IP, valeur saisie dans `champ`).
+
+    Les sous-classes fixent `champ` (le champ du corps de la requête) et `prefixe`
+    (qui sépare leurs compteurs de ceux de la connexion).
+    """
+
+    scope = 'login'
+    champ = ''
+    prefixe = ''
+
+    def get_cache_key(self, request, view):
+        data = request.data if hasattr(request.data, 'get') else {}
+        empreinte = hashlib.sha256(str(data.get(self.champ, '')).strip().lower().encode()).hexdigest()[:32]
+        return self.cache_format % {'scope': self.prefixe, 'ident': f'{self.get_ident(request)}:{empreinte}'}
+
+
+class ActivationRateThrottle(ParChampRateThrottle):
+    champ = 'matricule'
+    prefixe = 'activation'
+
+
 class LoginIPRateThrottle(SimpleRateThrottle):
     scope = 'login_ip'
 
