@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest';
-import { REGISTRE, menuVisible, moduleParCode, modulesVisibles } from './modules';
+import { CANVAS_MON_ESPACE, REGISTRE, menuVisible, moduleParCode, modulesVisibles, styleModule } from './modules';
 
 describe('registre des modules', () => {
   it('modulesVisibles filtre et ordonne selon le registre', () => {
@@ -33,5 +33,17 @@ describe('registre des modules', () => {
   it('moduleParCode', () => {
     expect(moduleParCode('parametres').libelle).toBe('Paramètres');
     expect(moduleParCode('xyz')).toBeUndefined();
+  });
+});
+
+describe('styleModule', () => {
+  it('pose la couleur du module et, s’il y en a une, la toile', () => {
+    expect(styleModule({ couleur: '1 2% 3%', canvas: '105 12% 93%' })).toEqual({ '--module': '1 2% 3%', '--canvas': '105 12% 93%' });
+    expect(styleModule({ couleur: '1 2% 3%' })).toEqual({ '--module': '1 2% 3%' });
+    expect(styleModule({})).toBeUndefined();
+  });
+
+  it('toile sauge de Mon espace', () => {
+    expect(CANVAS_MON_ESPACE).toBe('105 12% 93%');
   });
 });

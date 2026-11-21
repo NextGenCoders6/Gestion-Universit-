@@ -1,10 +1,12 @@
 /** « Mon espace » : même layout qu'un module, menu selon les rôles de la personne. */
 import { Navigate, Route, Routes } from 'react-router-dom';
-import { BookOpen, CalendarDays, FileText, GraduationCap, Tag, UserCircle, Users } from '@/components/ui/icons';
+import { BookOpen, CalendarDays, FileText, GraduationCap, Home, Tag, UserCircle, Users } from '@/components/ui/icons';
 import ModuleShell from '@/app/ModuleShell';
-import { COULEUR_MON_ESPACE } from '@/app/modules';
+import { CANVAS_MON_ESPACE, COULEUR_MON_ESPACE } from '@/app/modules';
 import Introuvable from '@/app/pages/Introuvable';
 import useAuthStore, { aRole } from '@/store/authStore';
+import AccueilEnseignant from './accueil/AccueilEnseignant';
+import AccueilEtudiant from './accueil/AccueilEtudiant';
 import MesDocuments from './pages/MesDocuments';
 import MesEnseignants from './pages/MesEnseignants';
 import MesEnseignements from './pages/MesEnseignements';
@@ -14,12 +16,14 @@ import MonPlanning from './pages/MonPlanning';
 import MonPlanningEtudiant from './pages/MonPlanningEtudiant';
 
 const MENU_ENSEIGNANT = [
+  { chemin: 'accueil', libelle: 'Accueil', icone: Home, element: <AccueilEnseignant /> },
   { chemin: 'planning', libelle: 'Mon planning', icone: CalendarDays, element: <MonPlanning /> },
   { chemin: 'enseignements', libelle: 'Mes enseignements', icone: BookOpen, element: <MesEnseignements /> },
   { chemin: 'documents', libelle: 'Mes documents', icone: FileText, element: <MesDocuments /> },
 ];
 
 const MENU_ETUDIANT = [
+  { chemin: 'accueil', libelle: 'Accueil', icone: Home, element: <AccueilEtudiant /> },
   { chemin: 'notes', libelle: 'Mes notes', icone: GraduationCap, element: <MesNotes /> },
   { chemin: 'planning', libelle: 'Mon planning', icone: CalendarDays, element: <MonPlanningEtudiant /> },
   { chemin: 'enseignants', libelle: 'Mes enseignants', icone: Users, element: <MesEnseignants /> },
@@ -41,7 +45,7 @@ export default function MoiShell() {
   const enseignant = useAuthStore((s) => aRole(s, 'enseignant'));
   const etudiant = useAuthStore((s) => aRole(s, 'etudiant'));
   const menu = enseignant ? MENU_ENSEIGNANT : etudiant ? MENU_ETUDIANT : [];
-  const module = { code: 'moi', libelle: 'Mon espace', chemin: '/moi', menu, icone: UserCircle, couleur: COULEUR_MON_ESPACE };
+  const module = { code: 'moi', libelle: 'Mon espace', chemin: '/moi', menu, icone: UserCircle, couleur: COULEUR_MON_ESPACE, canvas: CANVAS_MON_ESPACE };
   return (
     <ModuleShell module={module}>
       <Routes>

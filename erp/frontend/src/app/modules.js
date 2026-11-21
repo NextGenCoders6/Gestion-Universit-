@@ -132,7 +132,14 @@ export function menuVisible(module, niveaux = []) {
 }
 
 /** Style à poser sur un conteneur pour que `bg-module`, `text-module`… prennent la couleur du module. */
-export const styleModule = (module) => (module?.couleur ? { '--module': module.couleur } : undefined);
+/** Variables CSS d'un module : sa couleur d'accent et, pour « Mon espace », sa toile de fond. */
+export function styleModule(module) {
+  if (!module?.couleur) return undefined;
+  return module.canvas ? { '--module': module.couleur, '--canvas': module.canvas } : { '--module': module.couleur };
+}
 
 /** Couleur d'accent de « Mon espace » : le vert UCCB. */
 export const COULEUR_MON_ESPACE = '147.6 83.4% 30%';
+
+/** Toile vert sauge de « Mon espace », proche de #E4E8E3 éclairci ; les autres modules gardent la toile commune. */
+export const CANVAS_MON_ESPACE = '105 12% 93%';
