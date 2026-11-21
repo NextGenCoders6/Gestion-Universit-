@@ -1,10 +1,13 @@
 """Mot de passe oublié : demande du lien par e-mail, puis choix d'un nouveau mot de passe."""
+import threading
+import time
 from smtplib import SMTPException
 from unittest.mock import patch
 
 from django.contrib.auth.models import User
 from django.core import mail
 from django.core.cache import cache
+from django.core.checks import run_checks
 from django.test import TestCase, override_settings
 from rest_framework.test import APIClient
 
@@ -23,6 +26,10 @@ class DemandeTests(TestCase):
         self.user = User.objects.create_user('Divine.Moukala', password=MDP)
         self.personne = f.personne('Moukala', 'Divine', email='divine@example.org', user=self.user)
         self.anonyme = APIClient()
+        # L'envoi part hors de la requête : ici il est exécuté tout de suite, pour lire mail.outbox.
+        synchrone = patch('core.api.mot_de_passe.demarrer', lambda fonction, *args: fonction(*args))
+        synchrone.start()
+        self.addCleanup(synchrone.stop)
 
     def demander(self, identifiant):
         return self.anonyme.post(URL_DEMANDE, {'identifiant': identifiant}, format='json')
@@ -72,12 +79,62 @@ class DemandeTests(TestCase):
         self.assertEqual(r.status_code, 200)
         self.assertEqual(r.data, MESSAGE_DEMANDE)
 
+    def test_delai_par_compte(self):
+        for saisie in ('divine.moukala', 'divine@example.org', 'DIVINE.MOUKALA'):
+            self.assertEqual(self.demander(saisie).data, MESSAGE_DEMANDE)
+        self.assertEqual(len(mail.outbox), 1)
+
     def test_journal_a_chaque_envoi(self):
         self.demander('inconnu')
         self.assertFalse(JournalAudit.objects.filter(action='demande_reinitialisation').exists())
         self.demander('divine.moukala')
         self.assertTrue(JournalAudit.objects.filter(module='core', action='demande_reinitialisation',
                                                     description='Divine.Moukala').exists())
+
+
+
+@override_settings(BASE_URL='http://testserver-erp')
+class EnvoiHorsRequeteTests(TestCase):
+    """La réponse n'attend pas le serveur SMTP : ni blocage, ni écart de temps révélateur."""
+
+    def setUp(self):
+        cache.clear()
+        user = User.objects.create_user('divine', email='divine@example.org', password=MDP)
+        self.personne = f.personne('Moukala', 'Divine', email='divine@example.org', user=user)
+
+    def test_reponse_sans_attendre_le_serveur_smtp(self):
+        libere = threading.Event()
+
+        def smtp_bloque(*args, **kwargs):
+            libere.wait(timeout=5)
+            raise SMTPException('serveur muet')
+
+        with patch('core.api.mot_de_passe.send_mail', side_effect=smtp_bloque), \
+                self.assertLogs('core.api.mot_de_passe', level='ERROR'):
+            debut = time.monotonic()
+            r = APIClient().post(URL_DEMANDE, {'identifiant': 'divine'}, format='json')
+            duree = time.monotonic() - debut
+            libere.set()
+            for fil in threading.enumerate():
+                if fil.name.startswith('envoi-reinitialisation'):
+                    fil.join(timeout=5)
+        self.assertEqual(r.data, MESSAGE_DEMANDE)
+        self.assertLess(duree, 2)
+
+
+class ConfigurationEmailTests(TestCase):
+    def test_delai_smtp_borne(self):
+        from django.conf import settings
+        self.assertIsNotNone(settings.EMAIL_TIMEOUT)
+        self.assertLessEqual(settings.EMAIL_TIMEOUT, 30)
+
+    @override_settings(DEBUG=False, EMAIL_HOST='')
+    def test_avertissement_sans_serveur_smtp_hors_debug(self):
+        self.assertIn('core.W003', [m.id for m in run_checks()])
+
+    @override_settings(DEBUG=False, EMAIL_HOST='smtp.example.org')
+    def test_pas_d_avertissement_avec_serveur_smtp(self):
+        self.assertNotIn('core.W003', [m.id for m in run_checks()])
 
 
 URL_REINIT = '/api/core/mot-de-passe/reinitialisation/'

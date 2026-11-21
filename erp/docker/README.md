@@ -72,6 +72,9 @@ docker compose logs -f web
 Pour envoyer de vrais e-mails, renseignez une adresse d'envoi de l'université dans `erp/.env` (voir `.env.example`) :
 `EMAIL_HOST`, `EMAIL_PORT`, `EMAIL_HOST_USER`, `EMAIL_HOST_PASSWORD`, `EMAIL_USE_TLS` et `DEFAULT_FROM_EMAIL`, puis
 `docker compose up -d`. Le lien envoyé pointe vers `BASE_URL` et reste valable 1 heure.
+`DEFAULT_FROM_EMAIL` doit être une adresse que ce serveur SMTP accepte d'utiliser comme expéditeur. Hors `DEBUG`,
+`python manage.py check` signale un `EMAIL_HOST` vide (`core.W003`). Un compte reçoit au plus un e-mail toutes les
+5 minutes ; l'envoi part en arrière-plan, en échec il est seulement écrit dans les journaux.
 
 ## Opérations courantes
 

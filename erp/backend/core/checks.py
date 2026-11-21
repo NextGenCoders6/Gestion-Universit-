@@ -28,3 +28,17 @@ def verifier_base_url(app_configs, **kwargs):
             id='core.W002',
         )]
     return []
+
+
+@register()
+def verifier_envoi_emails(app_configs, **kwargs):
+    """Hors DEBUG, sans serveur SMTP, les liens de réinitialisation finiraient dans les journaux."""
+    from django.core.checks import Warning as Avertissement
+    if not settings.DEBUG and not getattr(settings, 'EMAIL_HOST', ''):
+        return [Avertissement(
+            'EMAIL_HOST est vide alors que DEBUG=False : les e-mails « mot de passe oublié » ne partent pas, '
+            'ils sont écrits dans les journaux du serveur avec leur lien.',
+            hint='Renseignez EMAIL_HOST et les autres réglages EMAIL_* dans le fichier .env.',
+            id='core.W003',
+        )]
+    return []

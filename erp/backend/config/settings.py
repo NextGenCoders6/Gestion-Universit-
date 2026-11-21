@@ -119,6 +119,8 @@ EMAIL_PORT = config('EMAIL_PORT', default=587, cast=int)
 EMAIL_HOST_USER = config('EMAIL_HOST_USER', default='')
 EMAIL_HOST_PASSWORD = config('EMAIL_HOST_PASSWORD', default='')
 EMAIL_USE_TLS = config('EMAIL_USE_TLS', default=True, cast=bool)
+# Délai maximal d'une opération SMTP, en secondes : un serveur muet ne bloque pas l'envoi indéfiniment.
+EMAIL_TIMEOUT = config('EMAIL_TIMEOUT', default=10, cast=int)
 DEFAULT_FROM_EMAIL = config('DEFAULT_FROM_EMAIL', default='UCCB ERP <ne-pas-repondre@uccb.local>')
 # Durée de validité du lien de réinitialisation, en secondes.
 PASSWORD_RESET_TIMEOUT = 3600

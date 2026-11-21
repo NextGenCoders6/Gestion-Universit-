@@ -3,13 +3,16 @@
 Les réponses publiques ne révèlent jamais si un compte correspond à la saisie.
 """
 import logging
+import threading
 
 from django.conf import settings
 from django.contrib.auth.models import User
 from django.contrib.auth.password_validation import validate_password
 from django.contrib.auth.tokens import default_token_generator
+from django.core.cache import cache
 from django.core.exceptions import ValidationError as DjangoValidationError
 from django.core.mail import send_mail
+from django.db import connection
 from django.utils.encoding import force_bytes
 from django.utils.http import urlsafe_base64_decode, urlsafe_base64_encode
 from rest_framework import status
@@ -29,6 +32,8 @@ MESSAGE_DEMANDE = "Si un compte correspond, un e-mail contenant un lien vient d'
 MESSAGE_LIEN_INVALIDE = "Ce lien n'est plus valable. Faites une nouvelle demande."
 MESSAGE_SUCCES = 'Mot de passe modifié. Connectez-vous.'
 SUJET = 'UCCB — Réinitialisation de votre mot de passe'
+# Un seul e-mail par compte sur cette durée (secondes), quelle que soit la saisie : pas de bombardement.
+DELAI_ENTRE_ENVOIS = 300
 CORPS = """Bonjour {nom},
 
 Pour choisir un nouveau mot de passe, ouvrez ce lien (valable 1 heure) :
@@ -62,6 +67,25 @@ def lien_reinitialisation(user):
     return f'{settings.BASE_URL}/reinitialisation/{uid}/{default_token_generator.make_token(user)}'
 
 
+def demarrer(fonction, *args):
+    """Exécute `fonction` dans un fil séparé : la réponse HTTP n'attend pas le serveur SMTP."""
+    def executer():
+        try:
+            fonction(*args)
+        finally:
+            connection.close()  # connexion à la base propre à ce fil
+    threading.Thread(target=executer, daemon=True, name='envoi-reinitialisation').start()
+
+
+def envoyer_lien(request, username, adresse, corps):
+    try:
+        send_mail(SUJET, corps, None, [adresse])
+    except Exception:
+        logger.exception("Échec de l'envoi du lien de réinitialisation à %s", username)
+    else:
+        journaliser(request, 'core', 'demande_reinitialisation', username)
+
+
 class DemandeReinitialisationView(APIView):
     authentication_classes = []
     permission_classes = []
@@ -70,14 +94,10 @@ class DemandeReinitialisationView(APIView):
     def post(self, request):
         user = compte_pour_identifiant(str(request.data.get('identifiant', '')))
         adresse = adresse_de(user) if user else None
-        if user is not None and user.is_active and personne_suspendue(user) is None and adresse:
+        if (user is not None and user.is_active and personne_suspendue(user) is None and adresse
+                and cache.add(f'oubli-envoi:{user.pk}', 1, DELAI_ENTRE_ENVOIS)):
             corps = CORPS.format(nom=nom_complet(user), lien=lien_reinitialisation(user))
-            try:
-                send_mail(SUJET, corps, None, [adresse])
-            except Exception:
-                logger.exception("Échec de l'envoi du lien de réinitialisation à %s", user.username)
-            else:
-                journaliser(request, 'core', 'demande_reinitialisation', user.username)
+            demarrer(envoyer_lien, request, user.username, adresse, corps)
         return Response({'detail': MESSAGE_DEMANDE})
 
 
