@@ -1,6 +1,8 @@
 // Arbre de routage : connexion, lanceur, un sous-arbre par module, espace personnel.
 import { createBrowserRouter, Navigate, Outlet } from 'react-router-dom';
 import ActivationPage from '@/features/auth/ActivationPage';
+import MotDePasseOubliePage from '@/features/auth/MotDePasseOubliePage';
+import ReinitialisationPage from '@/features/auth/ReinitialisationPage';
 import LoginPage from '@/features/auth/LoginPage';
 import Lanceur from './Lanceur';
 import ModuleShell from './ModuleShell';
@@ -36,6 +38,8 @@ function routeModule(module) {
 export const router = createBrowserRouter([
   { path: '/login', element: <LoginPage /> },
   { path: '/activation', element: <ActivationPage /> },
+  { path: '/mot-de-passe-oublie', element: <MotDePasseOubliePage /> },
+  { path: '/reinitialisation/:uid/:jeton', element: <ReinitialisationPage /> },
   {
     element: <RequireAuth />,
     children: [
