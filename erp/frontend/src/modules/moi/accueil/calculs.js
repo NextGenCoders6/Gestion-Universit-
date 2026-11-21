@@ -33,15 +33,33 @@ export function prochainesSeances(seances, maintenant, n = 5) {
     .map(({ s }) => s);
 }
 
-/** Dernier semestre délibéré de l'inscription la plus récente, ou le message si les résultats sont masqués. */
+/** Dernier semestre délibéré, en remontant les inscriptions de la plus récente à la plus ancienne.
+ *  Une inscription aux résultats masqués arrête la recherche : on affiche son message, rien de plus ancien. */
 export function dernierResultat(notes) {
-  const inscription = notes?.inscriptions?.[0];
-  if (!inscription) return null;
-  if (inscription.resultats_masques) return { masque: inscription.message_resultats };
-  const semestre = [...(inscription.semestres ?? [])].reverse().find((x) => x.deliberee && x.resultat);
-  return semestre
-    ? { semestre: semestre.semestre, moyenne: semestre.resultat.moyenne, decision: semestre.resultat.decision }
-    : null;
+  for (const inscription of notes?.inscriptions ?? []) {
+    if (inscription.resultats_masques) return { masque: inscription.message_resultats };
+    const semestre = [...(inscription.semestres ?? [])].reverse().find((x) => x.deliberee && x.resultat);
+    if (semestre) return { semestre: semestre.semestre, moyenne: semestre.resultat.moyenne, decision: semestre.resultat.decision };
+  }
+  return null;
+}
+
+const memeCreneau = (a, b) => {
+  const x = debutFin(a);
+  const y = debutFin(b);
+  return x.debut.getTime() === y.debut.getTime() && x.fin.getTime() === y.fin.getTime();
+};
+
+/** Une seule séance par paire mutualisée de même créneau (la plus petite clé, comme le serveur),
+ *  avec `classes` : la classe de la séance, puis celle de la séance liée regroupée. */
+export function regrouperMutualisees(seances) {
+  const parId = new Map((seances ?? []).map((s) => [s.id, s]));
+  return (seances ?? []).flatMap((s) => {
+    const partenaire = s.seance_liee ? parId.get(s.seance_liee) : undefined;
+    const regroupe = partenaire && memeCreneau(s, partenaire);
+    if (regroupe && s.id > partenaire.id) return [];
+    return [{ ...s, classes: regroupe ? [s.classe_libelle, partenaire.classe_libelle] : [s.classe_libelle] }];
+  });
 }
 
 export function dossierCourant(frais) {

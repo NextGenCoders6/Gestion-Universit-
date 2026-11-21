@@ -1,6 +1,6 @@
 import { describe, expect, it } from 'vitest';
 import {
-  bilanEnseignements, debutFin, dernierResultat, dossierCourant, heuresSeances, prochainesSeances,
+  bilanEnseignements, debutFin, dernierResultat, dossierCourant, heuresSeances, prochainesSeances, regrouperMutualisees,
 } from './calculs';
 
 const s = (jour, debut, fin, extra = {}) => ({ id: `${jour}${debut}`, creneau_effectif: { jour, debut, fin }, ...extra });
@@ -64,5 +64,39 @@ describe('calculs de l’accueil', () => {
       { classe: 3, heures_effectuees: 4, heures_prevues: 4 },
     ])).toEqual({ faites: 22, prevues: 76, classes: 2 });
     expect(bilanEnseignements([])).toEqual({ faites: 0, prevues: 0, classes: 0 });
+  });
+
+  it('regroupe une paire mutualisée de même créneau (même règle que le serveur)', () => {
+    const a = s('2026-11-20', '09:00', '11:00', { id: 7, seance_liee: 9, classe_libelle: 'L1 MIP' });
+    const b = s('2026-11-20', '09:00', '11:00', { id: 9, seance_liee: 7, classe_libelle: 'L1 INFO' });
+    const seule = s('2026-11-21', '09:00', '10:00', { id: 12, seance_liee: null, classe_libelle: 'L2 INFO' });
+    const regroupees = regrouperMutualisees([b, a, seule]);
+    expect(regroupees.map((x) => x.id)).toEqual([7, 12]);
+    expect(regroupees[0].classes).toEqual(['L1 MIP', 'L1 INFO']);
+    expect(regroupees[1].classes).toEqual(['L2 INFO']);
+    expect(heuresSeances(regroupees)).toBe(3);
+  });
+
+  it('garde les deux séances liées si leurs créneaux diffèrent', () => {
+    const a = s('2026-11-20', '09:00', '11:00', { id: 7, seance_liee: 9, classe_libelle: 'L1 MIP' });
+    const b = s('2026-11-27', '09:00', '11:00', { id: 9, seance_liee: 7, classe_libelle: 'L1 INFO' });
+    expect(regrouperMutualisees([a, b]).map((x) => x.id)).toEqual([7, 9]);
+  });
+
+  it('cherche le dernier résultat dans les inscriptions précédentes', () => {
+    const notes = { inscriptions: [
+      { resultats_masques: false, semestres: [{ semestre: 'S1', deliberee: false, resultat: null }] },
+      { resultats_masques: false, semestres: [{ semestre: 'S2', deliberee: true, resultat: { moyenne: 11.5, decision: 'ADMIS' } }] },
+    ] };
+    expect(dernierResultat(notes)).toEqual({ semestre: 'S2', moyenne: 11.5, decision: 'ADMIS' });
+  });
+
+  it('s’arrête sur une inscription masquée avant de remonter plus loin', () => {
+    const notes = { inscriptions: [
+      { resultats_masques: false, semestres: [] },
+      { resultats_masques: true, message_resultats: 'Réglez vos frais.', semestres: [] },
+      { resultats_masques: false, semestres: [{ semestre: 'S2', deliberee: true, resultat: { moyenne: 11.5, decision: 'ADMIS' } }] },
+    ] };
+    expect(dernierResultat(notes)).toEqual({ masque: 'Réglez vos frais.' });
   });
 });

@@ -65,4 +65,27 @@ describe('Accueil enseignant', () => {
     expect(await screen.findByText('Donnée indisponible pour le moment.')).toBeInTheDocument();
     expect(await screen.findByText('22 h / 76 h')).toBeInTheDocument();
   });
+
+  it('séance mutualisée : comptée une fois, une seule ligne avec les deux classes', async () => {
+    const paire = (id, lie, classe) => ({ ...seance('2026-11-20', '09:00', '11:00'), id, seance_liee: lie, classe_libelle: classe });
+    api.monPlanning.mockResolvedValue([paire(7, 9, 'L1 MIP — 2026-2027'), paire(9, 7, 'L1 INFO — 2026-2027')]);
+    rendre();
+    expect(await screen.findByText('2 h')).toBeInTheDocument();
+    expect(await screen.findByText('L1 MIP — 2026-2027 · L1 INFO — 2026-2027')).toBeInTheDocument();
+  });
+
+  it('avancement : un même EC dans deux classes se distingue', async () => {
+    api.mesEnseignements.mockResolvedValue([
+      { ...AFFECTATIONS[0], id: 1, classe: 1, classe_libelle: 'L1 MIP — 2026-2027', type_seance: 'CM' },
+      { ...AFFECTATIONS[0], id: 4, classe: 2, classe_libelle: 'L1 BCG — 2026-2027', type_seance: null },
+    ]);
+    rendre();
+    expect(await screen.findByRole('progressbar', { name: 'Avancement de ALGO1 — L1 MIP — 2026-2027 · CM' })).toBeInTheDocument();
+    expect(screen.getByRole('progressbar', { name: 'Avancement de ALGO1 — L1 BCG — 2026-2027' })).toBeInTheDocument();
+  });
+
+  it('lien « Tout voir » en couleur primaire (contraste AA sur carte blanche)', async () => {
+    rendre();
+    expect(screen.getByRole('link', { name: /Avancement/ })).toHaveClass('text-primary');
+  });
 });

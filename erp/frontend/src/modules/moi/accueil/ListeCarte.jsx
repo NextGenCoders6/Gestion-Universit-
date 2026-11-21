@@ -1,4 +1,4 @@
-/** Carte de l'accueil : titre, lien vers la page détaillée, puis une liste, un texte « vide » ou une erreur. */
+/** Carte de l'accueil (lien en couleur primaire : la couleur du module est sous le contraste AA en petit texte) : titre, lien vers la page détaillée, puis une liste, un texte « vide » ou une erreur. */
 import { Link } from 'react-router-dom';
 
 export default function ListeCarte({ titre, lien, libelleLien = 'Tout voir', chargement, vide, erreur, children }) {
@@ -11,7 +11,7 @@ export default function ListeCarte({ titre, lien, libelleLien = 'Tout voir', cha
       <header className="flex items-center justify-between gap-3">
         <h2 className="font-semibold text-foreground">{titre}</h2>
         <Link to={lien} aria-label={`${libelleLien} — ${titre}`}
-          className="text-sm font-medium text-module underline-offset-4 hover:underline">
+          className="text-sm font-medium text-primary underline-offset-4 hover:underline">
           {libelleLien}
         </Link>
       </header>

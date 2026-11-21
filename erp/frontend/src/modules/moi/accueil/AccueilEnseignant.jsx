@@ -7,7 +7,7 @@ import { dateFr } from '@/modules/finance/lib/format';
 import BarreAvancement from '@/modules/edt/components/BarreAvancement';
 import useAuthStore from '@/store/authStore';
 import * as api from '../api';
-import { bilanEnseignements, heuresSeances, prochainesSeances } from './calculs';
+import { bilanEnseignements, heuresSeances, prochainesSeances, regrouperMutualisees } from './calculs';
 import { INDISPONIBLE, quatorzeJours } from './commun';
 import EnTeteAccueil from './EnTeteAccueil';
 import LigneSeance from './LigneSeance';
@@ -37,14 +37,14 @@ export default function AccueilEnseignant() {
   const documents = useQuery({ queryKey: ['moi', 'documents'], queryFn: api.mesDocuments });
 
   const bilan = bilanEnseignements(affectations.data);
-  const prochaines = prochainesSeances(seancesAVenir.data, maintenant);
+  const prochaines = prochainesSeances(regrouperMutualisees(seancesAVenir.data), maintenant);
 
   return (
     <div className="space-y-6">
       <EnTeteAccueil nomComplet={nomComplet} />
       <div className="grid grid-cols-2 gap-3 lg:grid-cols-4">
         <Indicateur libelle="Cours cette semaine" icone={CalendarDays} lien="/moi/planning"
-          {...selon(seancesSemaine, (d) => ({ valeur: heures(heuresSeances(d)), detail: `Semaine du ${dateFr(semaine.debut)}` }))} />
+          {...selon(seancesSemaine, (d) => ({ valeur: heures(heuresSeances(regrouperMutualisees(d))), detail: `Semaine du ${dateFr(semaine.debut)}` }))} />
         <Indicateur libelle="Heures faites" icone={Clock} lien="/moi/enseignements"
           {...selon(affectations, () => ({ valeur: `${heures(bilan.faites)} / ${heures(bilan.prevues)}`, detail: 'Sur l’ensemble de vos affectations' }))} />
         <Indicateur libelle="Classes" icone={School} lien="/moi/enseignements"
@@ -56,22 +56,30 @@ export default function AccueilEnseignant() {
         <ListeCarte titre="Prochaines séances" lien="/moi/planning" chargement={seancesAVenir.isPending}
           erreur={seancesAVenir.isError && INDISPONIBLE} vide={prochaines.length === 0 && 'Aucune séance dans les 14 prochains jours.'}>
           <ul className="divide-y divide-border">
-            {prochaines.map((s) => <LigneSeance key={s.id} seance={s} detail={s.classe_libelle} />)}
+            {prochaines.map((s) => <LigneSeance key={s.id} seance={s} detail={s.classes.join(' · ')} />)}
           </ul>
         </ListeCarte>
         <ListeCarte titre="Avancement" lien="/moi/enseignements" chargement={affectations.isPending}
           erreur={affectations.isError && INDISPONIBLE} vide={affectations.data?.length === 0 && 'Aucune affectation pour l’instant.'}>
           <ul className="space-y-3">
-            {(affectations.data ?? []).map((a) => (
-              <li key={a.id} className="space-y-1.5">
-                <div className="flex items-baseline justify-between gap-3 text-sm">
-                  <p className="truncate font-medium text-foreground">{a.ec_code} — {a.ec_libelle}</p>
-                  <p className="chiffres shrink-0 text-xs text-muted-foreground">{a.heures_effectuees} / {a.heures_prevues} h</p>
-                </div>
-                <BarreAvancement faites={pct(a.heures_effectuees, a.heures_prevues)} planifiees={pct(a.heures_consommees, a.heures_prevues)}
-                  label={`Avancement de ${a.ec_code}`} valeur={`${a.heures_effectuees} h faites sur ${a.heures_prevues} h`} />
-              </li>
-            ))}
+            {(affectations.data ?? []).map((a) => {
+              // Classe et type de séance : un même EC peut être donné dans deux classes, ou en CM et en TD.
+              const precision = [a.classe_libelle, a.type_seance].filter(Boolean).join(' · ');
+              return (
+                <li key={a.id} className="space-y-1.5">
+                  <div className="flex items-baseline justify-between gap-3 text-sm">
+                    <div className="min-w-0">
+                      <p className="truncate font-medium text-foreground">{a.ec_code} — {a.ec_libelle}</p>
+                      {precision && <p className="truncate text-xs text-muted-foreground">{precision}</p>}
+                    </div>
+                    <p className="chiffres shrink-0 text-xs text-muted-foreground">{a.heures_effectuees} / {a.heures_prevues} h</p>
+                  </div>
+                  <BarreAvancement faites={pct(a.heures_effectuees, a.heures_prevues)} planifiees={pct(a.heures_consommees, a.heures_prevues)}
+                    label={precision ? `Avancement de ${a.ec_code} — ${precision}` : `Avancement de ${a.ec_code}`}
+                    valeur={`${a.heures_effectuees} h faites sur ${a.heures_prevues} h`} />
+                </li>
+              );
+            })}
           </ul>
         </ListeCarte>
       </div>
