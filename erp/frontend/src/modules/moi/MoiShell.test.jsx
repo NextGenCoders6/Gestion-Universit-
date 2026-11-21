@@ -47,7 +47,7 @@ describe('Mon espace', () => {
 
   it('un étudiant voit ses notes, son planning et ses enseignants', async () => {
     connecter(['etudiant']);
-    rendre('/moi');
+    rendre('/moi/notes');
     expect((await screen.findAllByRole('heading', { name: 'Mes notes' })).length).toBeGreaterThan(0);
     for (const nom of ['Mes notes', 'Mon planning', 'Mes enseignants', 'Mes frais']) {
       expect(screen.getAllByRole('link', { name: nom }).length).toBeGreaterThan(0);
@@ -63,7 +63,7 @@ describe('Mon espace', () => {
 
   it('masque « Tous les modules » sans autre module', async () => {
     connecter(['etudiant']);
-    rendre('/moi');
+    rendre('/moi/notes');
     expect((await screen.findAllByRole('heading', { name: 'Mes notes' })).length).toBeGreaterThan(0);
     expect(screen.queryByRole('link', { name: 'Retour aux modules' })).not.toBeInTheDocument();
   });
@@ -73,5 +73,20 @@ describe('Mon espace', () => {
     rendre('/moi/planning');
     expect(await screen.findByText('grille')).toBeInTheDocument();
     expect(screen.getAllByRole('link', { name: 'Retour aux modules' }).length).toBeGreaterThan(0);
+  });
+
+  it('ouvre l’accueil par défaut pour un étudiant', async () => {
+    connecter(['etudiant']);
+    rendre('/moi');
+    expect(await screen.findByRole('heading', { name: /^(Bonjour|Bonsoir), U$/ })).toBeInTheDocument();
+    expect(screen.getAllByRole('link', { name: 'Accueil' }).length).toBeGreaterThan(0);
+    expect(screen.getByText('Moyenne du dernier semestre')).toBeInTheDocument();
+  });
+
+  it('ouvre l’accueil par défaut pour un enseignant', async () => {
+    connecter(['enseignant']);
+    rendre('/moi');
+    expect(await screen.findByRole('heading', { name: /^(Bonjour|Bonsoir), U$/ })).toBeInTheDocument();
+    expect(screen.getByText('Documents déposés')).toBeInTheDocument();
   });
 });

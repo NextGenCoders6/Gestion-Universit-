@@ -3,7 +3,7 @@ import { useQuery } from '@tanstack/react-query';
 import { CalendarClock, CalendarDays, GraduationCap, Tag } from '@/components/ui/icons';
 import Indicateur from '@/components/shared/Indicateur';
 import { bornesSemaine } from '@/lib/dates';
-import { dateFr, fcfa } from '@/modules/finance/lib/format';
+import { dateFr } from '@/modules/finance/lib/format';
 import useAuthStore from '@/store/authStore';
 import * as api from '../api';
 import { dernierResultat, dossierCourant, heuresSeances, prochainesSeances } from './calculs';
@@ -11,6 +11,12 @@ import EnTeteAccueil from './EnTeteAccueil';
 import LigneSeance from './LigneSeance';
 import ListeCarte from './ListeCarte';
 import { INDISPONIBLE, quatorzeJours } from './commun';
+
+/** Montant en grand, unité en plus petit : la valeur tient sur une ligne dans les cartes étroites. */
+const montant = (v) => (
+  <>{Number(v ?? 0).toLocaleString('fr-FR', { maximumFractionDigits: 0 })}{' '}
+    <span className="text-base font-medium text-muted-foreground">FCFA</span></>
+);
 
 const moyenne = (v) => `${v.toLocaleString('fr-FR', { minimumFractionDigits: 2, maximumFractionDigits: 2 })} /20`;
 
@@ -28,11 +34,11 @@ function indicateursFrais(frais) {
   if (frais.isError) return [{ valeur: '—', detail: INDISPONIBLE }, { valeur: '—', detail: INDISPONIBLE }];
   const d = dossierCourant(frais.data);
   if (!d) return [{ valeur: '—', detail: 'Aucun dossier de frais.' }, { valeur: '—', detail: 'Aucun dossier de frais.' }];
-  const reste = { valeur: fcfa(d.reste), detail: d.classe_libelle };
-  if (d.en_retard) return [reste, { valeur: fcfa(d.montant_en_retard), detail: 'Une mensualité en retard', ton: 'danger' }];
+  const reste = { valeur: montant(d.reste), detail: d.classe_libelle };
+  if (d.en_retard) return [reste, { valeur: montant(d.montant_en_retard), detail: 'Une mensualité en retard', ton: 'danger' }];
   const p = d.prochaine_echeance;
   return [reste, p
-    ? { valeur: fcfa(p.montant - p.paye), detail: `avant le ${dateFr(p.date_limite)}` }
+    ? { valeur: montant(p.montant - p.paye), detail: `avant le ${dateFr(p.date_limite)}` }
     : { valeur: '—', detail: 'Aucune échéance à venir.' }];
 }
 

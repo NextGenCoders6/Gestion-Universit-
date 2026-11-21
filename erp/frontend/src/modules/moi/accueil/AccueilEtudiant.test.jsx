@@ -46,8 +46,10 @@ describe('Accueil étudiant', () => {
     expect(await screen.findByText('6,98 /20')).toBeInTheDocument();
     expect(screen.getByText('S1 · AJOURNÉ')).toBeInTheDocument();
     expect(await screen.findByText('4 h')).toBeInTheDocument();
-    expect(await screen.findByText(/1\s200\s000 FCFA/)).toBeInTheDocument();
-    expect(screen.getByText(/150\s000 FCFA/)).toBeInTheDocument();
+    // montant en grand, unité « FCFA » à part en plus petit : la valeur tient sur une ligne
+    expect(await screen.findByText(/^1\s200\s000$/)).toBeInTheDocument();
+    expect(screen.getByText(/^150\s000$/)).toBeInTheDocument();
+    expect(screen.getAllByText('FCFA')).toHaveLength(2);
     expect(screen.getByText('avant le 05/01/2027')).toBeInTheDocument();
     expect((await screen.findAllByText('ALGO1 — Algorithmique 1')).length).toBe(2);
     expect(screen.getAllByText('MBEMBA Christelle').length).toBe(3);   // 2 cours + la carte enseignant
