@@ -1,7 +1,7 @@
 # Accès à l'espace personnel — Document de conception
 
 Date : 2026-11-21
-Statut : en attente de validation
+Statut : validé par l'utilisateur le 2026-11-21
 
 ## 1. Intention
 
