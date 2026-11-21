@@ -1,5 +1,5 @@
 import { render, screen } from '@testing-library/react';
-import { MemoryRouter } from 'react-router-dom';
+import { MemoryRouter, Route, Routes } from 'react-router-dom';
 import { beforeEach, describe, expect, it } from 'vitest';
 import useAuthStore from '@/store/authStore';
 import Lanceur from './Lanceur';
@@ -11,7 +11,14 @@ function connecter(modules, roles = []) {
   });
 }
 
-const rendre = () => render(<MemoryRouter><Lanceur /></MemoryRouter>);
+const rendre = () => render(
+  <MemoryRouter>
+    <Routes>
+      <Route path="/" element={<Lanceur />} />
+      <Route path="/moi" element={<p>Page Mon espace</p>} />
+    </Routes>
+  </MemoryRouter>,
+);
 
 describe('Lanceur', () => {
   beforeEach(() => useAuthStore.getState().clearAuth());
@@ -30,10 +37,23 @@ describe('Lanceur', () => {
     expect(screen.getByText(/Aucun module ne vous est attribué/)).toBeInTheDocument();
   });
 
-  it('ajoute « Mon espace » pour un enseignant', () => {
+  it('redirige vers /moi un étudiant sans module', () => {
+    connecter([], ['etudiant']);
+    rendre();
+    expect(screen.getByText('Page Mon espace')).toBeInTheDocument();
+  });
+
+  it('redirige vers /moi un enseignant sans module', () => {
     connecter([], ['enseignant']);
     rendre();
+    expect(screen.getByText('Page Mon espace')).toBeInTheDocument();
+  });
+
+  it('garde le lanceur pour un enseignant avec un module', () => {
+    connecter([{ code: 'edt', libelle: 'Emploi du temps', niveaux: ['utilisateur'] }], ['enseignant', 'chef_departement']);
+    rendre();
+    expect(screen.getByRole('link', { name: /Emploi du temps/ })).toHaveAttribute('href', '/edt');
     expect(screen.getByRole('link', { name: /Mon espace/ })).toHaveAttribute('href', '/moi');
-    expect(screen.queryByText(/Aucun module ne vous est attribué/)).not.toBeInTheDocument();
+    expect(screen.queryByText('Page Mon espace')).not.toBeInTheDocument();
   });
 });

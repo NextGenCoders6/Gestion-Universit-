@@ -349,10 +349,10 @@ export default function LoginPage() {
                 </button>
 
                 <p className="self-center text-[14px] text-[#4A4741]">
-                  Mot de passe oublié ? Contactez l’administration.
+                  <Link to="/mot-de-passe-oublie" className="font-semibold text-uccb-green underline underline-offset-4">Mot de passe oublié ?</Link>
                 </p>
                 <p className="self-center text-[14px] text-[#4A4741]">
-                  Étudiant, première connexion ?{' '}
+                  Première connexion ?{' '}
                   <Link to="/activation" className="font-semibold text-uccb-green underline underline-offset-4">Activer mon compte</Link>
                 </p>
               </div>

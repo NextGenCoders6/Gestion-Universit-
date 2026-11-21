@@ -59,6 +59,23 @@ docker compose run --rm -e DEBUG=True web python manage.py seed_demo
 
 La commande affiche les comptes et leur mot de passe commun, également listés dans `erp/backend/README.md`.
 
+## Envoi des e-mails
+
+L'ERP envoie un e-mail quand quelqu'un demande à réinitialiser son mot de passe (« Mot de passe oublié ? » sur la
+page de connexion). Sans configuration, l'e-mail n'est pas envoyé : il s'affiche dans les journaux, ce qui suffit en
+développement :
+
+```bash
+docker compose logs -f web
+```
+
+Pour envoyer de vrais e-mails, renseignez une adresse d'envoi de l'université dans `erp/.env` (voir `.env.example`) :
+`EMAIL_HOST`, `EMAIL_PORT`, `EMAIL_HOST_USER`, `EMAIL_HOST_PASSWORD`, `EMAIL_USE_TLS` et `DEFAULT_FROM_EMAIL`, puis
+`docker compose up -d`. Le lien envoyé pointe vers `BASE_URL` et reste valable 1 heure.
+`DEFAULT_FROM_EMAIL` doit être une adresse que ce serveur SMTP accepte d'utiliser comme expéditeur. Hors `DEBUG`,
+`python manage.py check` signale un `EMAIL_HOST` vide (`core.W003`). Un compte reçoit au plus un e-mail toutes les
+5 minutes ; l'envoi part en arrière-plan, en échec il est seulement écrit dans les journaux.
+
 ## Opérations courantes
 
 ```bash

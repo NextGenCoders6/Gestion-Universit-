@@ -16,9 +16,9 @@ vi.mock('./api', () => ({
 }));
 vi.mock('@/modules/edt/components/PlanningGrid', () => ({ default: () => <div>grille</div> }));
 
-function connecter(roles) {
+function connecter(roles, modules = []) {
   useAuthStore.getState().setAuth({
-    accessToken: 'a', refreshToken: 'r', user: { id: 1, username: 'u', nom_complet: 'U', roles, modules: [] },
+    accessToken: 'a', refreshToken: 'r', user: { id: 1, username: 'u', nom_complet: 'U', roles, modules },
   });
 }
 
@@ -59,5 +59,19 @@ describe('Mon espace', () => {
     connecter([]);
     rendre('/moi');
     expect(await screen.findByText(/Aucun espace personnel/)).toBeInTheDocument();
+  });
+
+  it('masque « Tous les modules » sans autre module', async () => {
+    connecter(['etudiant']);
+    rendre('/moi');
+    expect((await screen.findAllByRole('heading', { name: 'Mes notes' })).length).toBeGreaterThan(0);
+    expect(screen.queryByRole('link', { name: 'Retour aux modules' })).not.toBeInTheDocument();
+  });
+
+  it('montre « Tous les modules » avec un module', async () => {
+    connecter(['enseignant'], [{ code: 'edt', libelle: 'Emploi du temps', niveaux: ['utilisateur'] }]);
+    rendre('/moi/planning');
+    expect(await screen.findByText('grille')).toBeInTheDocument();
+    expect(screen.getAllByRole('link', { name: 'Retour aux modules' }).length).toBeGreaterThan(0);
   });
 });

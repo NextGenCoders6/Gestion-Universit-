@@ -118,6 +118,12 @@ export function modulesVisibles(moi) {
   return REGISTRE.filter((m) => autorises.has(m.code));
 }
 
+/** Vrai quand la personne n'a que son espace personnel (étudiant ou enseignant, aucun module). */
+export function espacePersonnelSeul(moi) {
+  const roles = moi?.roles ?? [];
+  return modulesVisibles(moi).length === 0 && (roles.includes('etudiant') || roles.includes('enseignant'));
+}
+
 /** Entrées de menu visibles pour les niveaux de l'utilisateur dans ce module. */
 export function menuVisible(module, niveaux = []) {
   return (module?.menu ?? []).filter(

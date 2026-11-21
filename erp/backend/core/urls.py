@@ -2,7 +2,9 @@ from django.urls import include, path
 from rest_framework.routers import DefaultRouter
 
 from core.api import referentiel as ref
+from core.api.activation import ActivationView
 from core.api.etablissement import EtablissementView
+from core.api.mot_de_passe import DemandeReinitialisationView, ReinitialisationView
 from core.api.personnes import PersonneViewSet
 from core.api.utilisateurs import AuditViewSet, ModulesView, UtilisateurViewSet
 from core.auth import ConnexionView, DeconnexionView, MoiView, RenouvellementView
@@ -27,6 +29,9 @@ urlpatterns = [
     path('token/refresh/', RenouvellementView.as_view(), name='core_token_refresh'),
     path('deconnexion/', DeconnexionView.as_view(), name='core_deconnexion'),
     path('moi/', MoiView.as_view(), name='core_moi'),
+    path('activation/', ActivationView.as_view(), name='core_activation'),
+    path('mot-de-passe/oubli/', DemandeReinitialisationView.as_view(), name='core_mot_de_passe_oubli'),
+    path('mot-de-passe/reinitialisation/', ReinitialisationView.as_view(), name='core_mot_de_passe_reinitialisation'),
     path('modules/', ModulesView.as_view(), name='core_modules'),
     path('etablissement/', EtablissementView.as_view(), name='core_etablissement'),
     path('', include(router.urls)),

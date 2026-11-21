@@ -1,9 +1,9 @@
-import { Link } from 'react-router-dom';
+import { Link, Navigate } from 'react-router-dom';
 import { ArrowRightCircle, Inbox, UserCircle } from '@/components/ui/icons';
 import logoUccb from '@/assets/login/logo-uccb.svg';
 import useAuthStore, { aRole } from '@/store/authStore';
 import MenuUtilisateur from './MenuUtilisateur';
-import { COULEUR_MON_ESPACE, modulesVisibles, styleModule } from './modules';
+import { COULEUR_MON_ESPACE, espacePersonnelSeul, modulesVisibles, styleModule } from './modules';
 
 function Tuile({ to, libelle, description, icone: Icone, couleur }) {
   return (
@@ -44,6 +44,9 @@ export default function Lanceur() {
   const espacePersonnel = useAuthStore((state) => aRole(state, 'etudiant') || aRole(state, 'enseignant'));
   const modules = modulesVisibles(user);
   const vide = modules.length === 0 && !espacePersonnel;
+
+  // Rien d'autre à choisir que son espace personnel : on y va directement.
+  if (espacePersonnelSeul(user)) return <Navigate to="/moi" replace />;
 
   return (
     <div className="min-h-dvh bg-canvas">

@@ -13,6 +13,8 @@ services:
       # Vite relaie avec l'en-tête Host « web:8000 ».
       ALLOWED_HOSTS: localhost,127.0.0.1,web
       NUM_PROXIES: "0"
+      # Les liens des e-mails (mot de passe oublié) ouvrent l'interface de développement.
+      BASE_URL: http://localhost:5180
     volumes:
       - ./backend:/app
 

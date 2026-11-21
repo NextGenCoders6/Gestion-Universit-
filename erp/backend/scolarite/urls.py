@@ -8,7 +8,6 @@ router.register('etudiants', views_secretariat.EtudiantViewSet, basename='scolar
 router.register('inscriptions', views_secretariat.InscriptionViewSet, basename='scolarite-inscription')
 
 urlpatterns = [
-    path('activation/', views_etudiant.ActivationView.as_view(), name='scolarite_activation'),
     path('moi/notes/', views_etudiant.MesNotesView.as_view(), name='scolarite_moi_notes'),
     path('moi/planning/', views_etudiant.MonPlanningEtudiantView.as_view(), name='scolarite_moi_planning'),
     path('moi/enseignants/', views_etudiant.MesEnseignantsView.as_view(), name='scolarite_moi_enseignants'),

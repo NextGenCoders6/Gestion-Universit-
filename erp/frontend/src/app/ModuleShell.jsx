@@ -13,10 +13,12 @@ import { logout } from '@/api/auth';
 import useAuthStore, { niveauxModule } from '@/store/authStore';
 import { cn } from '@/lib/utils';
 import MenuUtilisateur from './MenuUtilisateur';
-import { menuVisible, styleModule } from './modules';
+import { espacePersonnelSeul, menuVisible, styleModule } from './modules';
 
 function ModuleSidebar({ module, onNavigate }) {
   const niveaux = useAuthStore((state) => niveauxModule(state, module.code));
+  // « Tous les modules » ramènerait aussitôt ici : inutile sans autre module.
+  const seulEspace = useAuthStore((state) => espacePersonnelSeul(state.user));
   const items = menuVisible(module, niveaux);
   const IconeModule = module.icone;
 
@@ -70,15 +72,17 @@ function ModuleSidebar({ module, onNavigate }) {
       </nav>
 
       <div className="relative space-y-1 border-t border-white/10 p-3">
-        <Link
-          to="/"
-          onClick={onNavigate}
-          aria-label="Retour aux modules"
-          className="flex items-center gap-3 rounded-lg px-3 py-2.5 text-sm font-medium text-sidebar-muted transition-colors hover:bg-white/[0.06] hover:text-white"
-        >
-          <LayoutGrid className="h-[18px] w-[18px] shrink-0" />
-          <span>Tous les modules</span>
-        </Link>
+        {!seulEspace && (
+          <Link
+            to="/"
+            onClick={onNavigate}
+            aria-label="Retour aux modules"
+            className="flex items-center gap-3 rounded-lg px-3 py-2.5 text-sm font-medium text-sidebar-muted transition-colors hover:bg-white/[0.06] hover:text-white"
+          >
+            <LayoutGrid className="h-[18px] w-[18px] shrink-0" />
+            <span>Tous les modules</span>
+          </Link>
+        )}
         <button
           type="button"
           onClick={() => logout()}
