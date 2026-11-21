@@ -110,6 +110,19 @@ FRONTEND_DIST = BASE_DIR / 'frontend_dist'
 # Adresse publique de l'ERP : les QR codes des documents officiels pointent vers {BASE_URL}/verifier/<jeton>.
 BASE_URL = config('BASE_URL', default='http://localhost:8000').rstrip('/')
 
+# Envoi des e-mails (lien de réinitialisation du mot de passe). Sans EMAIL_HOST,
+# les e-mails sont écrits dans la sortie standard (journaux du conteneur).
+EMAIL_HOST = config('EMAIL_HOST', default='')
+EMAIL_BACKEND = ('django.core.mail.backends.smtp.EmailBackend' if EMAIL_HOST
+                 else 'django.core.mail.backends.console.EmailBackend')
+EMAIL_PORT = config('EMAIL_PORT', default=587, cast=int)
+EMAIL_HOST_USER = config('EMAIL_HOST_USER', default='')
+EMAIL_HOST_PASSWORD = config('EMAIL_HOST_PASSWORD', default='')
+EMAIL_USE_TLS = config('EMAIL_USE_TLS', default=True, cast=bool)
+DEFAULT_FROM_EMAIL = config('DEFAULT_FROM_EMAIL', default='UCCB ERP <ne-pas-repondre@uccb.local>')
+# Durée de validité du lien de réinitialisation, en secondes.
+PASSWORD_RESET_TIMEOUT = 3600
+
 # Derrière un frontal (nginx de la pile Docker) : origines admises pour les formulaires de l'administration,
 # et prise en compte du HTTPS terminé par le frontal.
 CSRF_TRUSTED_ORIGINS = config('CSRF_TRUSTED_ORIGINS', default='', cast=Csv())

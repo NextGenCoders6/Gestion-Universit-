@@ -65,6 +65,11 @@ class ActivationRateThrottle(ParChampRateThrottle):
     prefixe = 'activation'
 
 
+class OubliRateThrottle(ParChampRateThrottle):
+    champ = 'identifiant'
+    prefixe = 'oubli'
+
+
 class LoginIPRateThrottle(SimpleRateThrottle):
     scope = 'login_ip'
 
